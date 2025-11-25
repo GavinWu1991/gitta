@@ -12,8 +12,9 @@ Gitta follows **Hexagonal Architecture** (Ports and Adapters) principles to main
 
 **Contents**:
 - Interfaces for repositories (`StoryRepository`, `TaskRepository`)
-- Domain value objects (`Story`, `TaskStatus`)
+- Domain value objects (`Story`, `TaskStatus`, `Priority`, `Status`)
 - Business rule contracts
+- Parser interfaces (`StoryParser`) for reading/writing story files
 
 **Rules**:
 - ✅ Can depend on: Standard library only
@@ -57,6 +58,7 @@ Gitta follows **Hexagonal Architecture** (Ports and Adapters) principles to main
 **Subdirectories**:
 - `infra/git/`: Git operations via go-git
 - `infra/filesystem/`: Filesystem operations for Markdown files
+  - `markdown_parser.go`: Implements `core.StoryParser` interface for reading/writing Markdown story files with YAML frontmatter
 
 #### UI Adapters (`ui/`)
 

@@ -76,7 +76,7 @@ func main() {
 		// Check imports
 		for _, imp := range node.Imports {
 			importPath := strings.Trim(imp.Path.Value, `"`)
-			
+
 			// Skip standard library and external packages
 			if !strings.Contains(importPath, "github.com/gavin/gitta") {
 				continue
@@ -131,4 +131,3 @@ func main() {
 
 	fmt.Println("Architecture check passed!")
 }
-
