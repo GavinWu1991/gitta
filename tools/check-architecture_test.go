@@ -70,4 +70,3 @@ func Test() { var _ gitta.RootCmd }`,
 		})
 	}
 }
-
