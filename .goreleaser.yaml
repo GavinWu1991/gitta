@@ -1,0 +1,48 @@
+# Goreleaser configuration for Gitta
+# Builds multi-platform binaries for macOS, Linux, and Windows
+
+project_name: gitta
+
+builds:
+  - id: gitta
+    main: ./cmd/gitta
+    binary: gitta
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/gavin/gitta/cmd/gitta.buildVersion={{.Version}}
+      - -X github.com/gavin/gitta/cmd/gitta.buildCommit={{.Commit}}
+      - -X github.com/gavin/gitta/cmd/gitta.buildDate={{.Date}}
+
+archives:
+  - id: default
+    builds:
+      - gitta
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - docs/
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+

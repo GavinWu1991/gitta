@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  verify:
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: ['1.21']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Install tools
+        run: make install-tools
+
+      - name: Run verification
+        run: make verify
+
+      - name: Verify bootstrap instructions (integration test)
+        run: |
+          # Test that go list works on a clean workspace
+          echo "Testing bootstrap completeness..."
+          go list ./...
+          if [ $? -ne 0 ]; then
+            echo "❌ Error: go list ./... failed. Bootstrap instructions may be incomplete."
+            exit 1
+          fi
+          echo "✅ Bootstrap verification passed"
+
+      - name: Test architecture guard
+        run: |
+          echo "Testing architecture guard..."
+          go test ./tools
+          if [ $? -ne 0 ]; then
+            echo "❌ Error: Architecture guard tests failed."
+            exit 1
+          fi
+          echo "✅ Architecture guard tests passed"
+
