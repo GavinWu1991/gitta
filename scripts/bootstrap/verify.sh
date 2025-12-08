@@ -30,8 +30,8 @@ if ! grep -q "module github.com/gavin/gitta" go.mod; then
 fi
 echo "✓ Module path correct"
 
-# Check Go version in go.mod
-if ! grep -q "go 1.21" go.mod && ! grep -q "go 1.22" go.mod; then
+# Check Go version in go.mod (allow 1.21+)
+if ! grep -Eq "go 1\.2[1-9]" go.mod; then
     echo "❌ Error: go.mod requires Go 1.21 or higher"
     exit 1
 fi
