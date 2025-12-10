@@ -29,7 +29,7 @@ func TestGetBranchListIntegration(t *testing.T) {
 	if _, err := wt.Add("readme.md"); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	hash, err := wt.Commit("init", &gogit.CommitOptions{})
+	hash, err := wt.Commit("init", testCommitOptionsGogit())
 	if err != nil {
 		t.Fatalf("commit: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestCheckBranchMergedDetachedHeadIntegration(t *testing.T) {
 	if _, err := wt.Add("a.txt"); err != nil {
 		t.Fatalf("add a: %v", err)
 	}
-	masterHash, err := wt.Commit("init", &gogit.CommitOptions{})
+	masterHash, err := wt.Commit("init", testCommitOptionsGogit())
 	if err != nil {
 		t.Fatalf("commit init: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestCheckBranchMergedDetachedHeadIntegration(t *testing.T) {
 	if _, err := wt.Add("b.txt"); err != nil {
 		t.Fatalf("add b: %v", err)
 	}
-	featureHash, err := wt.Commit("feature", &gogit.CommitOptions{})
+	featureHash, err := wt.Commit("feature", testCommitOptionsGogit())
 	if err != nil {
 		t.Fatalf("commit feature: %v", err)
 	}

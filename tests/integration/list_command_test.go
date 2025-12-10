@@ -141,7 +141,7 @@ func setupRepo(t *testing.T) string {
 	if _, err := wt.Add("readme.md"); err != nil {
 		t.Fatalf("add readme: %v", err)
 	}
-	if _, err := wt.Commit("init", &ggit.CommitOptions{}); err != nil {
+	if _, err := wt.Commit("init", testCommitOptions()); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 	return dir
