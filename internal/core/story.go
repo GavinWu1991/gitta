@@ -131,3 +131,19 @@ type StoryParser interface {
 	// An empty slice indicates the story is valid.
 	ValidateStory(story *Story) []ValidationError
 }
+
+// StoryRepository defines operations for listing and discovering story files.
+// Implementations encapsulate directory scanning and Sprint discovery logic.
+// All methods must respect context cancellation for long-running operations.
+type StoryRepository interface {
+	// ListStories scans a directory for Markdown story files and returns parsed stories.
+	// Returns an empty slice (not error) when the directory is empty.
+	// Should skip files that fail to parse while returning an aggregated error when
+	// critical failures occur (e.g., unreadable directory).
+	ListStories(ctx context.Context, dirPath string) ([]*Story, error)
+
+	// FindCurrentSprint determines the current Sprint directory path within sprintsDir.
+	// Implementations should use lexicographic ordering (case-insensitive) to pick the
+	// highest Sprint name when multiple exist.
+	FindCurrentSprint(ctx context.Context, sprintsDir string) (string, error)
+}
