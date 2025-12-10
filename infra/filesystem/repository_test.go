@@ -2,9 +2,11 @@ package filesystem
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -189,5 +191,65 @@ func TestListStories_ContextCheckedDuringScan(t *testing.T) {
 	_, err := repo.ListStories(ctx, storiesDir)
 	if err == nil {
 		t.Fatalf("expected context cancellation or deadline exceeded")
+	}
+}
+
+func TestFindStoryByID_SearchesSprintThenBacklog(t *testing.T) {
+	dir := t.TempDir()
+	repoPath := dir
+
+	// Backlog story only; Sprint directory exists but without target story.
+	writeStory(t, filepath.Join(repoPath, "sprints", "Sprint-01", "US-100.md"), "US-100", "Other task")
+	writeStory(t, filepath.Join(repoPath, "backlog", "US-200.md"), "US-200", "Target task")
+
+	repo := NewDefaultRepository()
+	story, path, err := repo.FindStoryByID(context.Background(), repoPath, "US-200")
+	if err != nil {
+		t.Fatalf("expected story, got error: %v", err)
+	}
+	if story.ID != "US-200" {
+		t.Fatalf("expected story ID US-200, got %s", story.ID)
+	}
+	if !strings.HasSuffix(path, filepath.Join("backlog", "US-200.md")) {
+		t.Fatalf("unexpected path: %s", path)
+	}
+}
+
+func TestFindStoryByID_NotFound(t *testing.T) {
+	repo := NewDefaultRepository()
+	_, _, err := repo.FindStoryByID(context.Background(), t.TempDir(), "US-999")
+	if err == nil {
+		t.Fatalf("expected ErrStoryNotFound")
+	}
+	if !errors.Is(err, core.ErrStoryNotFound) {
+		t.Fatalf("expected ErrStoryNotFound, got %v", err)
+	}
+}
+
+func TestFindStoryByPath_ValidatesMarkdown(t *testing.T) {
+	dir := t.TempDir()
+	repo := NewDefaultRepository()
+
+	// Non-existent
+	if _, err := repo.FindStoryByPath(context.Background(), filepath.Join(dir, "missing.md")); !errors.Is(err, core.ErrInvalidPath) {
+		t.Fatalf("expected ErrInvalidPath for missing file, got %v", err)
+	}
+
+	// Not markdown
+	txtPath := filepath.Join(dir, "file.txt")
+	requireNoError(t, os.WriteFile(txtPath, []byte("hi"), 0o644))
+	if _, err := repo.FindStoryByPath(context.Background(), txtPath); !errors.Is(err, core.ErrInvalidPath) {
+		t.Fatalf("expected ErrInvalidPath for non-markdown, got %v", err)
+	}
+
+	// Valid
+	mdPath := filepath.Join(dir, "task.md")
+	writeStory(t, mdPath, "US-300", "Valid story")
+	story, err := repo.FindStoryByPath(context.Background(), mdPath)
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if story.ID != "US-300" {
+		t.Fatalf("expected ID US-300, got %s", story.ID)
 	}
 }

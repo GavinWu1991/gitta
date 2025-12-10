@@ -35,6 +35,14 @@ func (m *mockGitRepository) CheckBranchMerged(ctx context.Context, repoPath, bra
 	return merged, nil
 }
 
+func (m *mockGitRepository) CreateBranch(ctx context.Context, repoPath, branchName string) error {
+	return nil
+}
+
+func (m *mockGitRepository) CheckoutBranch(ctx context.Context, repoPath, branchName string, force bool) error {
+	return nil
+}
+
 func TestDeriveStatus_Todo(t *testing.T) {
 	tests := []struct {
 		name      string

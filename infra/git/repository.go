@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 
 	"github.com/gavin/gitta/internal/core"
 	"github.com/go-git/go-git/v5"
@@ -110,6 +111,117 @@ func (r *Repository) CheckBranchMerged(ctx context.Context, repoPath, branchName
 		return false, err
 	}
 	return isAnc, nil
+}
+
+// CreateBranch creates a new branch from the current HEAD (or current commit if detached).
+func (r *Repository) CreateBranch(ctx context.Context, repoPath, branchName string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return ErrNotGitRepository
+	}
+
+	head, err := repo.Head()
+	if err != nil {
+		if errors.Is(err, plumbing.ErrReferenceNotFound) {
+			return ErrEmptyRepository
+		}
+		return err
+	}
+
+	branchRef := plumbing.NewBranchReferenceName(branchName)
+	if _, err := repo.Reference(branchRef, true); err == nil {
+		return ErrBranchExists
+	}
+
+	ref := plumbing.NewHashReference(branchRef, head.Hash())
+	if err := repo.Storer.SetReference(ref); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckoutBranch checks out an existing branch or creates it if missing.
+func (r *Repository) CheckoutBranch(ctx context.Context, repoPath, branchName string, force bool) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return ErrNotGitRepository
+	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	if !force {
+		if status, err := worktree.Status(); err == nil && !status.IsClean() {
+			return ErrUncommittedChanges
+		}
+	}
+
+	localRef := plumbing.NewBranchReferenceName(branchName)
+	remoteRef := plumbing.NewRemoteReferenceName("origin", branchName)
+
+	// Check if branch exists locally.
+	if _, err := repo.Reference(localRef, true); err == nil {
+		if err := worktree.Checkout(&git.CheckoutOptions{
+			Branch: localRef,
+			Force:  force,
+		}); err != nil {
+			if !force && strings.Contains(err.Error(), "worktree contains") {
+				return ErrUncommittedChanges
+			}
+			return err
+		}
+		return nil
+	}
+
+	// If remote branch exists, create local tracking branch.
+	if ref, err := repo.Reference(remoteRef, true); err == nil {
+		if err := worktree.Checkout(&git.CheckoutOptions{
+			Branch: localRef,
+			Hash:   ref.Hash(),
+			Create: true,
+			Force:  force,
+		}); err != nil {
+			if !force && strings.Contains(err.Error(), "worktree contains") {
+				return ErrUncommittedChanges
+			}
+			return err
+		}
+		return nil
+	}
+
+	// Create from current HEAD if no branch exists.
+	head, err := repo.Head()
+	if err != nil {
+		if errors.Is(err, plumbing.ErrReferenceNotFound) {
+			return ErrEmptyRepository
+		}
+		return err
+	}
+
+	if err := worktree.Checkout(&git.CheckoutOptions{
+		Branch: localRef,
+		Hash:   head.Hash(),
+		Create: true,
+		Force:  force,
+	}); err != nil {
+		if !force && strings.Contains(err.Error(), "worktree contains") {
+			return ErrUncommittedChanges
+		}
+		return err
+	}
+
+	return nil
 }
 
 // isAncestor reports whether ancestor is reachable from target's history.

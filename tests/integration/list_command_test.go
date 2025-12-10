@@ -127,8 +127,22 @@ func TestListCommand_PerformanceSanity(t *testing.T) {
 func setupRepo(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	if _, err := ggit.PlainInit(dir, false); err != nil {
+	repo, err := ggit.PlainInit(dir, false)
+	if err != nil {
 		t.Fatalf("failed to init git repo: %v", err)
+	}
+	wt, err := repo.Worktree()
+	if err != nil {
+		t.Fatalf("worktree: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "readme.md"), []byte("init"), 0o644); err != nil {
+		t.Fatalf("write readme: %v", err)
+	}
+	if _, err := wt.Add("readme.md"); err != nil {
+		t.Fatalf("add readme: %v", err)
+	}
+	if _, err := wt.Commit("init", &ggit.CommitOptions{}); err != nil {
+		t.Fatalf("commit: %v", err)
 	}
 	return dir
 }
