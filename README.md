@@ -1,14 +1,40 @@
 # Gitta - Git Task Assistant
 
-A lightweight task management tool that stores tasks as Markdown files in your Git repository. Gitta uses branch state to track task progress automatically, following the "Git is the Database" philosophy.
+Lightweight, Git-native task management that treats your repository as the source of truth. Track Sprint and backlog stories as Markdown, and let branch state reflect progress automatically.
 
-## Features
+[![CI](https://github.com/gavin/gitta/actions/workflows/ci.yml/badge.svg)](https://github.com/gavin/gitta/actions/workflows/ci.yml)
 
-- **Zero Infrastructure**: No servers, databases, or external services required
-- **Git-Native**: Tasks stored as Markdown files in your repository
-- **Branch-Aware**: Automatically tracks task status based on Git branch state
-- **CLI & TUI**: Command-line interface with future interactive TUI support
-- **Offline-First**: Works completely offline after initial setup
+---
+
+## Table of Contents
+
+- [What is Gitta?](#what-is-gitta)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Available Commands](#available-commands)
+- [Common Workflows](#common-workflows)
+- [Architecture](#architecture)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Documentation](#documentation)
+- [Support](#support)
+- [License](#license)
+
+---
+
+## What is Gitta?
+
+Gitta is a Git Task Assistant that stores tasks as Markdown files inside your repo. It derives status from Git branches, so your Sprint and backlog stay in sync with your actual work. No servers, no extra services—just Git.
+
+### Features
+
+- **Zero Infrastructure**: Nothing to provision; works in any Git repo.
+- **Git-Native**: Tasks live as Markdown with YAML frontmatter.
+- **Branch-Aware**: Branch state drives task status automatically.
+- **CLI-First**: Fast command-line workflow; future TUI planned.
+- **Offline-First**: Works entirely offline after setup.
+
+---
 
 ## Quick Start
 
@@ -21,31 +47,106 @@ A lightweight task management tool that stores tasks as Markdown files in your G
 ### Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/gavin/gitta.git
 cd gitta
+
+# Install dependencies
 go mod tidy
+
+# Verify installation
 make verify  # Run all checks
 ```
 
 ### Build
 
 ```bash
+# Build the binary
 go build -o gitta ./cmd/gitta
+
+# Verify it works
 ./gitta --help
 ./gitta version
 ```
 
-See [docs/quickstart.md](docs/quickstart.md) for detailed setup instructions.
+### First Commands
+
+```bash
+# List current Sprint tasks
+gitta list
+
+# List all tasks (Sprint + Backlog)
+gitta list --all
+
+# Start working on a task
+gitta start US-001
+
+# Check version
+gitta version
+```
+
+---
+
+## Available Commands
+
+| Command | Description | Basic Usage | Docs |
+|---------|-------------|-------------|------|
+| `gitta list` | Show current Sprint tasks; `--all` includes backlog | `gitta list [--all]` | [docs/cli/list.md](docs/cli/list.md) |
+| `gitta start` | Create/check out feature branch for a task, optionally set assignee | `gitta start <task-id|file-path> [--assignee <name>]` | [docs/cli/start.md](docs/cli/start.md) |
+| `gitta version` | Report build metadata (semver, commit, build date, Go version) | `gitta version [--json]` | [docs/cli/version.md](docs/cli/version.md) |
+
+### Quick Examples
+
+```bash
+# Sprint tasks only
+gitta list
+
+# Sprint + backlog
+gitta list --all
+
+# Start by task ID
+gitta start US-001
+
+# Start by file path
+gitta start sprints/Sprint-01/US-001.md
+
+# Check version
+gitta version --json
+```
+
+---
+
+## Common Workflows
+
+### Getting Started (Install → List → Start → Verify)
+1) Install and build (see Quick Start)  
+2) View Sprint tasks: `gitta list`  
+3) Start a task: `gitta start US-001`  
+4) Verify branch and status: check Git branch and task frontmatter
+
+### Daily Flow (Pull → List → Start/Continue → Review)
+1) Update repo: `git pull`  
+2) View Sprint: `gitta list`  
+3) Start or continue a task: `gitta start <task-id>`  
+4) Commit/push as you progress; use branches to reflect status
+
+### Sprint Planning (Sprint vs Backlog)
+1) List Sprint only: `gitta list`  
+2) Review Sprint + backlog: `gitta list --all`  
+3) Move tasks between Sprint/backlog by editing Markdown locations; rerun `gitta list --all` to verify
+
+---
 
 ## Architecture
 
-Gitta follows **Hexagonal Architecture** principles:
+Hexagonal (ports-and-adapters) structure:
+- **Domain**: `internal/core`, `internal/services`
+- **Adapters**: `cmd/` (CLI), `infra/` (Git, filesystem), `ui/` (future TUI)
+- **Shared**: `pkg/` utilities
 
-- **Domain Layer** (`internal/core`, `internal/services`): Business logic
-- **Adapter Layers** (`cmd/`, `infra/`, `ui/`): External interfaces
-- **Shared Packages** (`pkg/`): Reusable utilities
+See [docs/architecture.md](docs/architecture.md) for details.
 
-See [docs/architecture.md](docs/architecture.md) for detailed architecture documentation.
+---
 
 ## Development
 
@@ -62,33 +163,51 @@ tools/              # Development tools
 docs/               # Documentation
 ```
 
-### Running Tests
+### Tests
 
 ```bash
 go test ./...
-make verify  # Includes tests + linting
+make verify  # Tests + linting
 ```
 
 ### Adding New Commands
 
-1. Create command file: `cmd/gitta/<command>.go`
-2. Register in `cmd/gitta/root.go`
-3. Implement service in `internal/services/`
-4. Update `docs/cli/<command>.md`
+1) Create command file: `cmd/gitta/<command>.go`  
+2) Register in `cmd/gitta/root.go`  
+3) Implement service in `internal/services/`  
+4) Document in `docs/cli/<command>.md`
 
-See `cmd/README.md` for detailed command registration guidelines.
+See `cmd/README.md` for command adapter guidance.
+
+---
+
+## Contributing
+
+- Set up and verify: `go mod tidy && make verify`
+- Follow hexagonal boundaries (no business logic in `cmd/`)
+- Table-driven tests for non-trivial logic; add integration tests for CLI flows
+- Open PRs referencing relevant specs/plans; describe which sections you touched
+- Architecture reference: [docs/architecture.md](docs/architecture.md)
+- Command docs reference: [cmd/README.md](cmd/README.md)
+
+---
 
 ## Documentation
 
 - [Architecture Guide](docs/architecture.md)
 - [CLI Reference](docs/cli/)
-- [Quickstart Guide](specs/001-go-init-skeleton/quickstart.md)
+- [Quickstart Guide](docs/quickstart.md)
+
+---
+
+## Support
+
+- Issues: open on GitHub with repro steps and CLI output
+- Troubleshooting: re-run `gitta list --all` to confirm task locations and statuses
+
+---
 
 ## License
 
-[Add your license here]
-
-## Contributing
-
-[Add contributing guidelines here]
+Licensed under the [MIT License](LICENSE).
 
