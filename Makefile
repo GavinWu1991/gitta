@@ -1,4 +1,4 @@
-.PHONY: verify fmt vet test staticcheck govulncheck check-architecture install-tools
+.PHONY: verify fmt vet test staticcheck govulncheck check-architecture install-tools release-snapshot
 
 # Default target
 .DEFAULT_GOAL := verify
@@ -55,6 +55,15 @@ test:
 check-architecture:
 	@echo "Checking architecture boundaries..."
 	@go run ./tools/check-architecture.go
+
+# GoReleaser snapshot (dry-run, no publish)
+release-snapshot:
+	@echo "Running GoReleaser snapshot (no publish)..."
+	@if command -v goreleaser >/dev/null 2>&1; then \
+		goreleaser release --snapshot --skip-publish --clean; \
+	else \
+		echo "Warning: goreleaser not found. Install with: go install github.com/goreleaser/goreleaser@latest"; \
+	fi
 
 # Run all verification steps
 verify: fmt imports vet staticcheck govulncheck check-architecture test
