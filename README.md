@@ -2,23 +2,40 @@
 
 Lightweight, Git-native task management that treats your repository as the source of truth. Track Sprint and backlog stories as Markdown, and let branch state reflect progress automatically.
 
+[English](README.md) | [中文](README.zh-CN.md)
+
 [![CI](https://github.com/gavin/gitta/actions/workflows/ci.yml/badge.svg)](https://github.com/gavin/gitta/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.23+-brightgreen.svg)](go.mod)
 
 ---
 
 ## Table of Contents
 
-- [What is Gitta?](#what-is-gitta)
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Available Commands](#available-commands)
-- [Common Workflows](#common-workflows)
-- [Architecture](#architecture)
-- [Development](#development)
-- [Contributing](#contributing)
-- [Documentation](#documentation)
-- [Support](#support)
-- [License](#license)
+- [Gitta - Git Task Assistant](#gitta---git-task-assistant)
+  - [Table of Contents](#table-of-contents)
+  - [What is Gitta?](#what-is-gitta)
+    - [Features](#features)
+  - [Quick Start](#quick-start)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Build](#build)
+    - [First Commands](#first-commands)
+  - [Available Commands](#available-commands)
+    - [Quick Examples](#quick-examples)
+  - [Common Workflows](#common-workflows)
+    - [Getting Started (Install → List → Start → Verify)](#getting-started-install--list--start--verify)
+    - [Daily Flow (Pull → List → Start/Continue → Review)](#daily-flow-pull--list--startcontinue--review)
+    - [Sprint Planning (Sprint vs Backlog)](#sprint-planning-sprint-vs-backlog)
+  - [Architecture](#architecture)
+  - [Development](#development)
+    - [Project Structure](#project-structure)
+    - [Tests](#tests)
+    - [Adding New Commands](#adding-new-commands)
+  - [Contributing](#contributing)
+  - [Documentation](#documentation)
+  - [Support](#support)
+  - [License](#license)
 
 ---
 
