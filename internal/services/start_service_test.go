@@ -7,13 +7,25 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	ggit "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 
 	"github.com/gavin/gitta/infra/filesystem"
 	gitrepo "github.com/gavin/gitta/infra/git"
 	"github.com/gavin/gitta/internal/services"
 )
+
+func testCommitOptions() *ggit.CommitOptions {
+	return &ggit.CommitOptions{
+		Author: &object.Signature{
+			Name:  "Test User",
+			Email: "test@example.com",
+			When:  time.Now(),
+		},
+	}
+}
 
 func TestStartService_StartByID_CreatesBranch(t *testing.T) {
 	repoPath, repo := setupRepoWithStory(t, "sprints/Sprint-01/US-001.md")
@@ -119,7 +131,7 @@ func setupRepoWithStory(t *testing.T, storyRelPath string) (string, *ggit.Reposi
 	if _, err := wt.Add("readme.md"); err != nil {
 		t.Fatalf("add readme: %v", err)
 	}
-	if _, err := wt.Commit("init", &ggit.CommitOptions{}); err != nil {
+	if _, err := wt.Commit("init", testCommitOptions()); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 
@@ -149,7 +161,7 @@ Body
 	} else {
 		t.Fatalf("rel path: %v", err)
 	}
-	if _, err := wt.Commit("add story", &ggit.CommitOptions{}); err != nil {
+	if _, err := wt.Commit("add story", testCommitOptions()); err != nil {
 		t.Fatalf("commit story: %v", err)
 	}
 

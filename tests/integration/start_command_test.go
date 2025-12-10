@@ -94,7 +94,7 @@ func commitFileToRepo(t *testing.T, repoPath, filePath, message string) {
 	if _, err := wt.Add(rel); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	if _, err := wt.Commit(message, &ggit.CommitOptions{}); err != nil {
+	if _, err := wt.Commit(message, testCommitOptions()); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 }

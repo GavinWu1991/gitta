@@ -31,7 +31,7 @@ func TestStatusEngine_Integration(t *testing.T) {
 	if _, err := wt.Add("readme.md"); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	mainHash, err := wt.Commit("Initial commit", &gogit.CommitOptions{})
+	mainHash, err := wt.Commit("Initial commit", testCommitOptionsGogit())
 	if err != nil {
 		t.Fatalf("commit: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestStatusEngine_Integration(t *testing.T) {
 	if _, err := wt.Add("feature.md"); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	featHash, err := wt.Commit("Feature commit", &gogit.CommitOptions{})
+	featHash, err := wt.Commit("Feature commit", testCommitOptionsGogit())
 	if err != nil {
 		t.Fatalf("commit: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestStatusEngine_NoRemotes(t *testing.T) {
 	if _, err := wt.Add("readme.md"); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	hash, err := wt.Commit("Initial commit", &gogit.CommitOptions{})
+	hash, err := wt.Commit("Initial commit", testCommitOptionsGogit())
 	if err != nil {
 		t.Fatalf("commit: %v", err)
 	}
@@ -216,7 +216,7 @@ func TestStatusEngine_DetachedHEAD(t *testing.T) {
 	if _, err := wt.Add("readme.md"); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	hash, err := wt.Commit("Initial commit", &gogit.CommitOptions{})
+	hash, err := wt.Commit("Initial commit", testCommitOptionsGogit())
 	if err != nil {
 		t.Fatalf("commit: %v", err)
 	}

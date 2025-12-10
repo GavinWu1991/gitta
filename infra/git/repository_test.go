@@ -5,9 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // createTempRepo initializes an empty repository for tests.
@@ -24,6 +26,17 @@ func createTempRepo(t *testing.T) (*git.Repository, string) {
 	return repo, worktree.Filesystem.Root()
 }
 
+// testCommitOptions returns CommitOptions with default author for tests.
+func testCommitOptions() *git.CommitOptions {
+	return &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "Test User",
+			Email: "test@example.com",
+			When:  time.Now(),
+		},
+	}
+}
+
 // helper to create a commit with a file and return its hash.
 func commitFile(t *testing.T, repo *git.Repository, path string, message string) plumbing.Hash {
 	t.Helper()
@@ -37,7 +50,7 @@ func commitFile(t *testing.T, repo *git.Repository, path string, message string)
 	if _, err := wt.Add("file.txt"); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	hash, err := wt.Commit(message, &git.CommitOptions{})
+	hash, err := wt.Commit(message, testCommitOptions())
 	if err != nil {
 		t.Fatalf("commit: %v", err)
 	}
