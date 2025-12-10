@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 	Long: `Gitta is a lightweight task management tool that stores tasks as Markdown files
 in your Git repository. It uses branch state to track task progress automatically.
 
-For more information, see: https://github.com/gavin/gitta/docs/cli/`,
+For more information, see: https://github.com/GavinWu1991/gitta/docs/cli/`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Show help if no subcommand provided
 		cmd.Help()

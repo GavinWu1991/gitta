@@ -4,7 +4,7 @@ Lightweight, Git-native task management that treats your repository as the sourc
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-[![CI](https://github.com/gavin/gitta/actions/workflows/ci.yml/badge.svg)](https://github.com/gavin/gitta/actions/workflows/ci.yml)
+[![CI](https://github.com/GavinWu1991/gitta/actions/workflows/ci.yml/badge.svg)](https://github.com/GavinWu1991/gitta/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.23+-brightgreen.svg)](go.mod)
 
@@ -18,7 +18,9 @@ Lightweight, Git-native task management that treats your repository as the sourc
     - [Features](#features)
   - [Quick Start](#quick-start)
     - [Prerequisites](#prerequisites)
+    - [Download Pre-built Binaries](#download-pre-built-binaries)
     - [Installation](#installation)
+    - [One-line install + init (auto-download + init script)](#one-line-install--init-auto-download--init-script)
     - [Build](#build)
     - [First Commands](#first-commands)
   - [Available Commands](#available-commands)
@@ -61,11 +63,33 @@ Gitta is a Git Task Assistant that stores tasks as Markdown files inside your re
 - Git
 - Make (optional, for development)
 
+### Download Pre-built Binaries
+
+> Recommended: fastest path (≈2 minutes), no Go toolchain required.
+
+1. Visit GitHub Releases and choose a version.  
+2. Download the archive for your platform:  
+   - macOS: `gitta-<version>-darwin-amd64.tar.gz` (Intel) or `darwin-arm64.tar.gz` (Apple Silicon)  
+   - Linux: `gitta-<version>-linux-amd64.tar.gz` or `linux-arm64.tar.gz`  
+   - Windows: `gitta-<version>-windows-amd64.zip` or `windows-arm64.zip`
+3. Verify integrity (recommended):  
+   ```bash
+   shasum -a 256 gitta-<version>-<platform>-<arch>.tar.gz
+   # Compare with checksums.txt from the release
+   ```
+4. Extract and put on PATH:  
+   ```bash
+   tar -xzf gitta-<version>-darwin-amd64.tar.gz   # macOS/Linux
+   unzip gitta-<version>-windows-amd64.zip        # Windows
+   sudo mv gitta /usr/local/bin/                  # optional
+   gitta --help
+   ```
+
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/gavin/gitta.git
+git clone https://github.com/GavinWu1991/gitta.git
 cd gitta
 
 # Install dependencies
@@ -73,6 +97,14 @@ go mod tidy
 
 # Verify installation
 make verify  # Run all checks
+```
+
+### One-line install + init (auto-download + init script)
+
+```bash
+curl -sSf https://raw.githubusercontent.com/GavinWu1991/gitta/main/scripts/remote-init.sh | bash
+# Force re-init or custom sprint name:
+curl -sSf https://raw.githubusercontent.com/GavinWu1991/gitta/main/scripts/remote-init.sh | bash -s -- --force --example-sprint Sprint-02
 ```
 
 ### Build

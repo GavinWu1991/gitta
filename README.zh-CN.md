@@ -2,7 +2,7 @@
 
 轻量、原生 Git 的任务管理工具，把仓库作为唯一事实来源。任务以 Markdown 存储，分支状态自动反映进度，无需额外服务。
 
-[![CI](https://github.com/gavin/gitta/actions/workflows/ci.yml/badge.svg)](https://github.com/gavin/gitta/actions/workflows/ci.yml)
+[![CI](https://github.com/GavinWu1991/gitta/actions/workflows/ci.yml/badge.svg)](https://github.com/GavinWu1991/gitta/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.23+-brightgreen.svg)](go.mod)
 
@@ -16,7 +16,9 @@
     - [功能](#功能)
   - [快速开始](#快速开始)
     - [先决条件](#先决条件)
+    - [下载预构建二进制](#下载预构建二进制)
     - [安装](#安装)
+    - [一行安装 + 初始化（自动下载 + init 脚本）](#一行安装--初始化自动下载--init-脚本)
     - [构建](#构建)
     - [首次命令](#首次命令)
   - [可用命令](#可用命令)
@@ -59,11 +61,33 @@ Gitta 是一款 Git 任务助手，把任务存成带 YAML Frontmatter 的 Markd
 - Git
 - Make（可选，用于开发）
 
+### 下载预构建二进制
+
+> 推荐：最快 2 分钟即可运行，无需 Go 环境。
+
+1. 访问 GitHub Releases：选择需要的版本  
+2. 下载适合平台的压缩包：  
+   - macOS：`gitta-<version>-darwin-amd64.tar.gz`（Intel）或 `darwin-arm64.tar.gz`（Apple Silicon）  
+   - Linux：`gitta-<version>-linux-amd64.tar.gz` 或 `linux-arm64.tar.gz`  
+   - Windows：`gitta-<version>-windows-amd64.zip` 或 `windows-arm64.zip`
+3. 校验完整性（推荐）：  
+   ```bash
+   shasum -a 256 gitta-<version>-<platform>-<arch>.tar.gz
+   # 或使用 checksums.txt 中的值比对
+   ```
+4. 解压并添加到 PATH：  
+   ```bash
+   tar -xzf gitta-<version>-darwin-amd64.tar.gz   # macOS/Linux
+   unzip gitta-<version>-windows-amd64.zip        # Windows
+   sudo mv gitta /usr/local/bin/                  # 可选
+   gitta --help
+   ```
+
 ### 安装
 
 ```bash
 # 克隆仓库
-git clone https://github.com/gavin/gitta.git
+git clone https://github.com/GavinWu1991/gitta.git
 cd gitta
 
 # 安装依赖
@@ -71,6 +95,14 @@ go mod tidy
 
 # 验证安装
 make verify  # 运行全部检查
+```
+
+### 一行安装 + 初始化（自动下载 + init 脚本）
+
+```bash
+curl -sSf https://raw.githubusercontent.com/GavinWu1991/gitta/main/scripts/remote-init.sh | bash
+# 强制重建或自定义 Sprint 名：
+curl -sSf https://raw.githubusercontent.com/GavinWu1991/gitta/main/scripts/remote-init.sh | bash -s -- --force --example-sprint Sprint-02
 ```
 
 ### 构建
