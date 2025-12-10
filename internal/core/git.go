@@ -36,4 +36,14 @@ type GitRepository interface {
 	// "origin" remote's default branch (origin/main or origin/master). If origin
 	// is missing, the result is false without error.
 	CheckBranchMerged(ctx context.Context, repoPath, branchName string) (bool, error)
+
+	// CreateBranch creates a new branch from the current HEAD (or current commit if detached).
+	// Returns ErrBranchExists if the branch already exists locally.
+	CreateBranch(ctx context.Context, repoPath, branchName string) error
+
+	// CheckoutBranch checks out an existing branch or creates it if missing.
+	// If the branch exists remotely but not locally, implementations should create a local
+	// tracking branch. If force is false and the working tree has uncommitted changes,
+	// implementations should return ErrUncommittedChanges.
+	CheckoutBranch(ctx context.Context, repoPath, branchName string, force bool) error
 }

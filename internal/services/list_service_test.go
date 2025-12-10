@@ -39,6 +39,14 @@ func (f *fakeStoryRepo) FindCurrentSprint(ctx context.Context, sprintsDir string
 	return f.sprintPath, nil
 }
 
+func (f *fakeStoryRepo) FindStoryByID(ctx context.Context, repoPath, storyID string) (*core.Story, string, error) {
+	return nil, "", core.ErrStoryNotFound
+}
+
+func (f *fakeStoryRepo) FindStoryByPath(ctx context.Context, filePath string) (*core.Story, error) {
+	return nil, core.ErrInvalidPath
+}
+
 type fakeGitRepo struct {
 	branches []core.Branch
 	err      error
@@ -53,6 +61,14 @@ func (f *fakeGitRepo) GetBranchList(ctx context.Context, repoPath string) ([]cor
 
 func (f *fakeGitRepo) CheckBranchMerged(ctx context.Context, repoPath, branchName string) (bool, error) {
 	return false, nil
+}
+
+func (f *fakeGitRepo) CreateBranch(ctx context.Context, repoPath, branchName string) error {
+	return f.err
+}
+
+func (f *fakeGitRepo) CheckoutBranch(ctx context.Context, repoPath, branchName string, force bool) error {
+	return f.err
 }
 
 func TestListSprintTasks_ReturnsStoriesWithStatus(t *testing.T) {

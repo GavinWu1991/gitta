@@ -230,6 +230,72 @@ func TestRepository_CheckBranchMerged_NoOrigin(t *testing.T) {
 	}
 }
 
+func TestRepository_CreateBranch_And_Checkout(t *testing.T) {
+	repo, repoPath := createTempRepo(t)
+	impl := NewRepository()
+
+	commitFile(t, repo, repoPath, "init")
+
+	if err := impl.CheckoutBranch(context.Background(), repoPath, "feat/US-001", false); err != nil {
+		t.Fatalf("CheckoutBranch: %v", err)
+	}
+
+	head, err := repo.Head()
+	if err != nil {
+		t.Fatalf("head: %v", err)
+	}
+	if head.Name().Short() != "feat/US-001" {
+		t.Fatalf("expected head feat/US-001, got %s", head.Name().Short())
+	}
+}
+
+func TestRepository_CheckoutBranch_UncommittedChanges(t *testing.T) {
+	repo, repoPath := createTempRepo(t)
+	impl := NewRepository()
+
+	commitFile(t, repo, repoPath, "init")
+
+	// create uncommitted change on tracked file
+	if err := os.WriteFile(filepath.Join(repoPath, "file.txt"), []byte("modified"), 0o644); err != nil {
+		t.Fatalf("modify tracked file: %v", err)
+	}
+
+	err := impl.CheckoutBranch(context.Background(), repoPath, "feat/US-002", false)
+	if err == nil {
+		t.Fatalf("expected error due to uncommitted changes")
+	}
+	if err != ErrUncommittedChanges {
+		t.Fatalf("expected ErrUncommittedChanges, got %v", err)
+	}
+}
+
+func TestRepository_CheckoutBranch_RemoteTracking(t *testing.T) {
+	repo, repoPath := createTempRepo(t)
+	impl := NewRepository()
+
+	hash := commitFile(t, repo, repoPath, "init")
+
+	// Add remote ref for origin/feat/US-003
+	if err := repo.Storer.SetReference(plumbing.NewHashReference(
+		plumbing.NewRemoteReferenceName("origin", "feat/US-003"),
+		hash,
+	)); err != nil {
+		t.Fatalf("set remote ref: %v", err)
+	}
+
+	if err := impl.CheckoutBranch(context.Background(), repoPath, "feat/US-003", false); err != nil {
+		t.Fatalf("CheckoutBranch remote: %v", err)
+	}
+
+	head, err := repo.Head()
+	if err != nil {
+		t.Fatalf("head: %v", err)
+	}
+	if head.Name().Short() != "feat/US-003" {
+		t.Fatalf("expected head feat/US-003, got %s", head.Name().Short())
+	}
+}
+
 func TestRepository_CheckBranchMerged_MissingBranch(t *testing.T) {
 	_, repoPath := createTempRepo(t)
 	impl := NewRepository()

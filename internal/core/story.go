@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -146,4 +147,20 @@ type StoryRepository interface {
 	// Implementations should use lexicographic ordering (case-insensitive) to pick the
 	// highest Sprint name when multiple exist.
 	FindCurrentSprint(ctx context.Context, sprintsDir string) (string, error)
+
+	// FindStoryByID searches Sprint directories and backlog for a story with the given ID.
+	// Search order: Current Sprint -> other Sprints -> backlog. Returns the story, its file
+	// path, or ErrStoryNotFound if not found.
+	FindStoryByID(ctx context.Context, repoPath, storyID string) (*Story, string, error)
+
+	// FindStoryByPath reads and validates a story from the provided Markdown file path.
+	// Returns ErrInvalidPath if the path is not a readable Markdown file.
+	FindStoryByPath(ctx context.Context, filePath string) (*Story, error)
 }
+
+var (
+	// ErrStoryNotFound indicates that a story with the requested ID could not be located.
+	ErrStoryNotFound = errors.New("story not found")
+	// ErrInvalidPath indicates the provided file path is invalid or not a Markdown file.
+	ErrInvalidPath = errors.New("invalid file path")
+)
