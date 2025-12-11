@@ -17,6 +17,12 @@ var (
 
 	// ErrAssigneeUpdateFailed indicates that updating the assignee field failed.
 	ErrAssigneeUpdateFailed = errors.New("failed to update assignee")
+
+	// ErrNotGitRepository indicates the working directory is not a Git repository.
+	ErrNotGitRepository = errors.New("not a git repository")
+
+	// ErrWorkspaceExists indicates gitta workspace folders already exist and overwrite is disallowed.
+	ErrWorkspaceExists = errors.New("gitta workspace already exists")
 )
 
 // AssigneeUpdateError wraps an assignee update failure with file context.

@@ -72,9 +72,11 @@ install_gitta() {
 
   if install -m 0755 "$tmpdir/gitta" "$install_dir" 2>/dev/null; then
     log "Installed gitta to $install_dir"
+    GITTA_BIN="$install_dir/gitta"
   else
     log "No permission to write $install_dir, installing to $fallback_dir"
     cp "$tmpdir/gitta" "$fallback_dir/"
+    GITTA_BIN="$fallback_dir/gitta"
     log "Add to PATH if needed: export PATH=\"$fallback_dir:$PATH\""
   fi
 
@@ -85,24 +87,6 @@ install_gitta() {
   fi
 }
 
-run_init() {
-  local tmpdir="$1";
-  shift || true
-  local init_url="https://raw.githubusercontent.com/GavinWu1991/gitta/main/scripts/init.sh"
-  local init_path="$tmpdir/init.sh"
-
-  log "Downloading init script..."
-  download "$init_url" "$init_path"
-  chmod +x "$init_path"
-
-  if [[ ! -d .git ]]; then
-    fail "Not a Git repository. Please run inside your project root (contains .git)."
-  fi
-
-  log "Running init script with args: $*"
-  "$init_path" "$@"
-}
-
 main() {
   local os arch
   read os arch < <(detect_os_arch)
@@ -111,7 +95,18 @@ main() {
   trap 'rm -rf "$tmpdir"' EXIT
 
   install_gitta "$os" "$arch" "$tmpdir"
-  run_init "$tmpdir" "$@"
+
+  if [[ ! -d .git ]]; then
+    fail "Not a Git repository. Please run inside your project root (contains .git)."
+  fi
+
+  local gitta_bin="${GITTA_BIN:-$(command -v gitta || true)}"
+  if [[ -z "$gitta_bin" ]]; then
+    fail "gitta binary not found after install. Ensure it is on PATH."
+  fi
+
+  log "Running gitta init with args: $*"
+  "$gitta_bin" init "$@"
 
   log "Done. You can now run: gitta list"
 }

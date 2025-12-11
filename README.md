@@ -121,6 +121,9 @@ go build -o gitta ./cmd/gitta
 ### First Commands
 
 ```bash
+# Initialize workspace (creates sprints/backlog + examples)
+gitta init
+
 # List current Sprint tasks
 gitta list
 
@@ -140,6 +143,7 @@ gitta version
 
 | Command | Description | Basic Usage | Docs |
 |---------|-------------|-------------|------|
+| `gitta init` | Initialize gitta workspace with example tasks | `gitta init [--force] [--example-sprint <name>]` | [docs/cli/init.md](docs/cli/init.md) |
 | `gitta list` | Show current Sprint tasks; `--all` includes backlog | `gitta list [--all]` | [docs/cli/list.md](docs/cli/list.md) |
 | `gitta start` | Create/check out feature branch for a task, optionally set assignee | `gitta start <task-id|file-path> [--assignee <name>]` | [docs/cli/start.md](docs/cli/start.md) |
 | `gitta version` | Report build metadata (semver, commit, build date, Go version) | `gitta version [--json]` | [docs/cli/version.md](docs/cli/version.md) |

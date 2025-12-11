@@ -29,6 +29,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(initCmd)
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
