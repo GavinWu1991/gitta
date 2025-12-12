@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,7 +51,7 @@ func TestCreateService_CreateStory(t *testing.T) {
 				Prefix:   "US",
 				Status:   core.StatusDoing,
 				Priority: core.PriorityHigh,
-				Assignee: stringPtr("alice"),
+				Assignee: stringPtrHelper("alice"),
 				Tags:     []string{"frontend", "ui"},
 			},
 			wantIDPattern: "US-1",
@@ -175,23 +177,21 @@ Custom template content
 }
 
 func TestCreateService_EditorIntegration(t *testing.T) {
+	// Skip on Windows - editor integration is Unix-focused
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping editor integration test on Windows")
+	}
+
 	// This test verifies editor integration (without actually launching an editor)
-	// We'll use a mock editor script that just touches the file
+	// We'll use a cross-platform mock editor approach
 	tmpDir := t.TempDir()
 	storyDir := filepath.Join(tmpDir, "stories")
 	if err := os.MkdirAll(storyDir, 0755); err != nil {
 		t.Fatalf("Failed to create story directory: %v", err)
 	}
 
-	// Create a mock editor script
-	mockEditor := filepath.Join(tmpDir, "mock-editor.sh")
-	editorScript := `#!/bin/sh
-# Mock editor that just adds a comment to the file
-echo "# Edited by mock editor" >> "$1"
-`
-	if err := os.WriteFile(mockEditor, []byte(editorScript), 0755); err != nil {
-		t.Fatalf("Failed to create mock editor: %v", err)
-	}
+	// Create a cross-platform mock editor
+	mockEditor := createMockEditor(t, tmpDir)
 
 	idGenerator := filesystem.NewIDCounter(tmpDir)
 	parser := filesystem.NewMarkdownParser()
@@ -230,7 +230,31 @@ echo "# Edited by mock editor" >> "$1"
 	if err != nil {
 		t.Fatalf("Failed to read story file: %v", err)
 	}
-	if !contains(string(content), "Edited by mock editor") {
+	if !strings.Contains(string(content), "Edited by mock editor") {
 		t.Error("Editor did not modify the file")
 	}
+}
+
+// createMockEditor creates a cross-platform mock editor for testing
+func createMockEditor(t *testing.T, tmpDir string) string {
+	t.Helper()
+
+	// Create a shell script
+	mockEditor := filepath.Join(tmpDir, "mock-editor.sh")
+	editorScript := `#!/bin/sh
+# Mock editor that just adds a comment to the file
+echo "" >> "$1"
+echo "# Edited by mock editor" >> "$1"
+`
+	if err := os.WriteFile(mockEditor, []byte(editorScript), 0755); err != nil {
+		t.Fatalf("Failed to create mock editor: %v", err)
+	}
+
+	// Return the script path - it will be executed via sh -c in create_service.go
+	return mockEditor
+}
+
+// stringPtrHelper creates a string pointer (helper function for tests)
+func stringPtrHelper(s string) *string {
+	return &s
 }

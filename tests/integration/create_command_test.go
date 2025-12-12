@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -61,19 +62,16 @@ func TestCreateCommand_BasicCreation(t *testing.T) {
 }
 
 func TestCreateCommand_WithEditor(t *testing.T) {
+	// Skip on Windows - editor integration is Unix-focused
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping editor integration test on Windows")
+	}
+
 	repoPath := setupRepo(t)
 	storyDir := filepath.Join(repoPath, "backlog")
 
-	// Create a mock editor script
-	mockEditor := filepath.Join(repoPath, "mock-editor.sh")
-	editorScript := `#!/bin/sh
-# Mock editor that adds a comment
-echo "" >> "$1"
-echo "# Edited by mock editor" >> "$1"
-`
-	if err := os.WriteFile(mockEditor, []byte(editorScript), 0755); err != nil {
-		t.Fatalf("Failed to create mock editor: %v", err)
-	}
+	// Create a cross-platform mock editor
+	mockEditor := createMockEditorForTest(t, repoPath)
 
 	idGenerator := filesystem.NewIDCounter(repoPath)
 	parser := filesystem.NewMarkdownParser()
@@ -162,4 +160,23 @@ func TestCreateCommand_ConcurrentCreation(t *testing.T) {
 	if len(ids) != numStories {
 		t.Errorf("Expected %d unique IDs, got %d", numStories, len(ids))
 	}
+}
+
+// createMockEditorForTest creates a cross-platform mock editor for integration tests
+func createMockEditorForTest(t *testing.T, tmpDir string) string {
+	t.Helper()
+
+	// Create a shell script
+	mockEditor := filepath.Join(tmpDir, "mock-editor.sh")
+	editorScript := `#!/bin/sh
+# Mock editor that adds a comment
+echo "" >> "$1"
+echo "# Edited by mock editor" >> "$1"
+`
+	if err := os.WriteFile(mockEditor, []byte(editorScript), 0755); err != nil {
+		t.Fatalf("Failed to create mock editor: %v", err)
+	}
+
+	// Return the script path - it will be executed via sh -c in create_service.go
+	return mockEditor
 }
