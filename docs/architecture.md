@@ -12,6 +12,7 @@ Gitta follows **Hexagonal Architecture** (Ports and Adapters) principles to main
 
 **Contents**:
 - Interfaces for repositories (`StoryRepository`, `TaskRepository`)
+- Interfaces for ID generation (`IDGenerator`)
 - Domain value objects (`Story`, `TaskStatus`, `Priority`, `Status`)
 - Business rule contracts
 - Parser interfaces (`StoryParser`) for reading/writing story files
@@ -27,7 +28,7 @@ Gitta follows **Hexagonal Architecture** (Ports and Adapters) principles to main
 **Purpose**: Implement domain interfaces, orchestrating business workflows.
 
 **Contents**:
-- Service implementations (`TaskService`, `StoryService`)
+- Service implementations (`CreateService`, `ListService`, `UpdateService`, `MoveService`, `StartService`, `InitService`)
 - Business logic and validation
 - Coordination between repositories
 
@@ -59,6 +60,8 @@ Gitta follows **Hexagonal Architecture** (Ports and Adapters) principles to main
 - `infra/git/`: Git operations via go-git
 - `infra/filesystem/`: Filesystem operations for Markdown files
   - `markdown_parser.go`: Implements `core.StoryParser` interface for reading/writing Markdown story files with YAML frontmatter
+  - `id_counter.go`: Implements `core.IDGenerator` interface for unique ID generation with file locking
+  - `repository.go`: Implements `core.StoryRepository` interface for story discovery and lookup
 
 #### UI Adapters (`ui/`)
 
