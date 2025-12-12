@@ -157,7 +157,8 @@ func (s *initService) backup(path string) (string, error) {
 }
 
 func (s *initService) writeTemplate(templateName, destDir string, created *[]string) error {
-	sourcePath := filepath.Join("init_templates", templateName)
+	// Use forward slashes for embedded FS paths (works on all platforms)
+	sourcePath := "init_templates/" + templateName
 	data, err := fs.ReadFile(s.templates, sourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", templateName, err)

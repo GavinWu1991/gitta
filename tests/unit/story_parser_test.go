@@ -233,8 +233,11 @@ func TestWriteStory_RoundTrip(t *testing.T) {
 	if readStory.Title != originalStory.Title {
 		t.Errorf("Title mismatch: expected '%s', got '%s'", originalStory.Title, readStory.Title)
 	}
-	if readStory.Body != originalStory.Body {
-		t.Errorf("Body mismatch: expected '%s', got '%s'", originalStory.Body, readStory.Body)
+	// Normalize line endings for cross-platform compatibility (Windows uses CRLF, Unix uses LF)
+	normalizedOriginal := strings.ReplaceAll(originalStory.Body, "\r\n", "\n")
+	normalizedRead := strings.ReplaceAll(readStory.Body, "\r\n", "\n")
+	if normalizedRead != normalizedOriginal {
+		t.Errorf("Body mismatch: expected '%s', got '%s'", normalizedOriginal, normalizedRead)
 	}
 }
 

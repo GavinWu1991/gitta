@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -12,13 +13,19 @@ import (
 func TestVersionCommand(t *testing.T) {
 	// Build the binary first
 	binPath := filepath.Join(t.TempDir(), "gitta")
-	if os.Getenv("GOOS") == "windows" {
+	// Add .exe extension on Windows
+	if runtime.GOOS == "windows" {
 		binPath += ".exe"
 	}
 
 	buildCmd := exec.Command("go", "build", "-o", binPath, "../../cmd/gitta")
 	if err := buildCmd.Run(); err != nil {
 		t.Fatalf("failed to build binary: %v", err)
+	}
+
+	// Verify binary exists before trying to execute
+	if _, err := os.Stat(binPath); err != nil {
+		t.Fatalf("binary not found at %s: %v", binPath, err)
 	}
 
 	tests := []struct {
