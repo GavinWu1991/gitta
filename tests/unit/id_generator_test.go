@@ -34,8 +34,8 @@ func TestIDCounter_GenerateNextID(t *testing.T) {
 		},
 		{
 			name:          "different prefix",
-			prefix:        "BUG",
-			wantPattern:   "BUG-1",
+			prefix:        "BG",
+			wantPattern:   "BG-1",
 			setupCounters: map[string]int{"US": 5},
 		},
 		{
