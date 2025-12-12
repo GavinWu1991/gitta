@@ -234,9 +234,3 @@ echo "# Edited by mock editor" >> "$1"
 		t.Error("Editor did not modify the file")
 	}
 }
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-// contains checks if substr is in s (uses existing helper from story_parser_test.go)
