@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gavin/gitta/internal/core"
 )
@@ -184,13 +183,20 @@ func TestListStories_ContextCheckedDuringScan(t *testing.T) {
 	}
 
 	repo := NewDefaultRepository()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
-	defer cancel()
-	time.Sleep(time.Nanosecond)
+	// Use WithCancel instead of WithTimeout for more reliable cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	// Cancel immediately to ensure context is cancelled before scan starts
+	cancel()
 
 	_, err := repo.ListStories(ctx, storiesDir)
 	if err == nil {
-		t.Fatalf("expected context cancellation or deadline exceeded")
+		t.Fatalf("expected context cancellation error, got nil")
+	}
+	if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+		// Check if error wraps context.Canceled or context.DeadlineExceeded
+		if !strings.Contains(err.Error(), "context canceled") && !strings.Contains(err.Error(), "deadline exceeded") {
+			t.Fatalf("expected context cancellation or deadline exceeded, got: %v", err)
+		}
 	}
 }
 

@@ -32,22 +32,13 @@ jobs:
 
       - name: Verify bootstrap instructions (integration test)
         run: |
-          # Test that go list works on a clean workspace
           echo "Testing bootstrap completeness..."
           go list ./...
-          if [ $? -ne 0 ]; then
-            echo "❌ Error: go list ./... failed. Bootstrap instructions may be incomplete."
-            exit 1
-          fi
           echo "✅ Bootstrap verification passed"
 
       - name: Test architecture guard
         run: |
           echo "Testing architecture guard..."
           go test ./tools
-          if [ $? -ne 0 ]; then
-            echo "❌ Error: Architecture guard tests failed."
-            exit 1
-          fi
           echo "✅ Architecture guard tests passed"
 
