@@ -133,6 +133,18 @@ gitta list --all
 # Start working on a task
 gitta start US-001
 
+# Create a new story
+gitta story create --title "Implement feature X"
+
+# Update story status
+gitta story status US-001 --status doing
+
+# Move story to sprint
+gitta story move US-001 --to sprints/2025-01/
+
+# List with filters
+gitta list --status doing --priority high
+
 # Check version
 gitta version
 ```
@@ -144,8 +156,11 @@ gitta version
 | Command | Description | Basic Usage | Docs |
 |---------|-------------|-------------|------|
 | `gitta init` | Initialize gitta workspace with example tasks | `gitta init [--force] [--example-sprint <name>]` | [docs/cli/init.md](docs/cli/init.md) |
-| `gitta list` | Show current Sprint tasks; `--all` includes backlog | `gitta list [--all]` | [docs/cli/list.md](docs/cli/list.md) |
+| `gitta list` | Show current Sprint tasks; `--all` includes backlog; supports filtering | `gitta list [--all] [--status <status>] [--priority <priority>]` | [docs/cli/list.md](docs/cli/list.md) |
 | `gitta start` | Create/check out feature branch for a task, optionally set assignee | `gitta start <task-id|file-path> [--assignee <name>]` | [docs/cli/start.md](docs/cli/start.md) |
+| `gitta story create` | Create a new story with unique ID and open editor | `gitta story create --title "Title" [--prefix US]` | [docs/cli/create.md](docs/cli/create.md) |
+| `gitta story status` | Update story status atomically | `gitta story status <story-id> --status <status>` | [docs/cli/status.md](docs/cli/status.md) |
+| `gitta story move` | Move story file to different directory atomically | `gitta story move <story-id> --to <dir>` | [docs/cli/move.md](docs/cli/move.md) |
 | `gitta version` | Report build metadata (semver, commit, build date, Go version) | `gitta version [--json]` | [docs/cli/version.md](docs/cli/version.md) |
 
 ### Quick Examples
