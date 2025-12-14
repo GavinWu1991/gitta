@@ -203,8 +203,8 @@ gitta version --json
 4) Commit/push as you progress; use branches to reflect status
 
 ### Sprint Planning (Sprint vs Backlog)
-1) List Sprint only: `gitta list`
-2) Review Sprint + backlog: `gitta list --all`
+1) List Sprint only: `gitta list`  
+2) Review Sprint + backlog: `gitta list --all`  
 3) Move tasks between Sprint/backlog by editing Markdown locations; rerun `gitta list --all` to verify
 
 ### Sprint Management
