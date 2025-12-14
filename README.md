@@ -50,7 +50,8 @@ Gitta is a Git Task Assistant that stores tasks as Markdown files inside your re
 - **Zero Infrastructure**: Nothing to provision; works in any Git repo.
 - **Git-Native**: Tasks live as Markdown with YAML frontmatter.
 - **Branch-Aware**: Branch state drives task status automatically.
-- **CLI-First**: Fast command-line workflow; future TUI planned.
+- **Sprint Management**: Organize tasks by time-bounded sprints with burndown charts.
+- **CLI-First**: Fast command-line workflow with interactive TUI for task selection.
 - **Offline-First**: Works entirely offline after setup.
 
 ---
@@ -157,6 +158,9 @@ gitta version
 |---------|-------------|-------------|------|
 | `gitta init` | Initialize gitta workspace with example tasks | `gitta init [--force] [--example-sprint <name>]` | [docs/cli/init.md](docs/cli/init.md) |
 | `gitta list` | Show current Sprint tasks; `--all` includes backlog; supports filtering | `gitta list [--all] [--status <status>] [--priority <priority>]` | [docs/cli/list.md](docs/cli/list.md) |
+| `gitta sprint start` | Create and activate a new sprint | `gitta sprint start [name] [--duration <duration>]` | [docs/cli/sprint.md](docs/cli/sprint.md) |
+| `gitta sprint close` | Close sprint and rollover unfinished tasks | `gitta sprint close [--target-sprint <name>] [--all]` | [docs/cli/sprint.md](docs/cli/sprint.md) |
+| `gitta sprint burndown` | Generate burndown chart from Git history | `gitta sprint burndown [name] [--format <format>]` | [docs/cli/sprint.md](docs/cli/sprint.md) |
 | `gitta start` | Create/check out feature branch for a task, optionally set assignee | `gitta start <task-id|file-path> [--assignee <name>]` | [docs/cli/start.md](docs/cli/start.md) |
 | `gitta story create` | Create a new story with unique ID and open editor | `gitta story create --title "Title" [--prefix US]` | [docs/cli/create.md](docs/cli/create.md) |
 | `gitta story status` | Update story status atomically | `gitta story status <story-id> --status <status>` | [docs/cli/status.md](docs/cli/status.md) |
@@ -199,9 +203,15 @@ gitta version --json
 4) Commit/push as you progress; use branches to reflect status
 
 ### Sprint Planning (Sprint vs Backlog)
-1) List Sprint only: `gitta list`  
-2) Review Sprint + backlog: `gitta list --all`  
+1) List Sprint only: `gitta list`
+2) Review Sprint + backlog: `gitta list --all`
 3) Move tasks between Sprint/backlog by editing Markdown locations; rerun `gitta list --all` to verify
+
+### Sprint Management
+1) Start a new sprint: `gitta sprint start` (auto-generates Sprint-01, Sprint-02, etc.)
+2) Close sprint and rollover tasks: `gitta sprint close --target-sprint Sprint-02`
+3) View burndown chart: `gitta sprint burndown` (analyzes Git history)
+4) View burndown as JSON: `gitta sprint burndown --format json`
 
 ---
 
