@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gavin/gitta/internal/core"
 )
@@ -243,6 +244,127 @@ func (r *Repository) FindStoryByPath(ctx context.Context, filePath string) (*cor
 	}
 
 	return story, nil
+}
+
+// CreateSprint creates a new sprint directory and returns the sprint entity.
+// The sprintDir parameter should be the full path to the sprint directory to create.
+func (r *Repository) CreateSprint(ctx context.Context, sprintDir string, name string, startDate time.Time, duration string) (*core.Sprint, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	// Validate sprint name
+	if err := core.ValidateSprintName(name); err != nil {
+		return nil, fmt.Errorf("invalid sprint name: %w", err)
+	}
+
+	// Check if sprint already exists
+	exists, err := r.SprintExists(ctx, sprintDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if sprint exists: %w", err)
+	}
+	if exists {
+		return nil, core.ErrSprintExists
+	}
+
+	// Create sprint directory
+	if err := os.MkdirAll(sprintDir, 0755); err != nil {
+		return nil, &core.IOError{
+			Operation: "create",
+			FilePath:  sprintDir,
+			Cause:     err,
+		}
+	}
+
+	// Calculate end date
+	endDate, err := core.CalculateEndDate(startDate, duration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate end date: %w", err)
+	}
+
+	return &core.Sprint{
+		Name:          name,
+		StartDate:     startDate,
+		EndDate:       endDate,
+		Duration:      duration,
+		DirectoryPath: sprintDir,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}, nil
+}
+
+// SetCurrentSprint creates/updates the current sprint link to point to the given sprint.
+func (r *Repository) SetCurrentSprint(ctx context.Context, sprintsDir string, sprintPath string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	linkPath := filepath.Join(sprintsDir, ".current-sprint")
+	_, err := CreateCurrentSprintLink(sprintPath, linkPath)
+	return err
+}
+
+// ListSprints returns all sprint directories in lexicographic order.
+func (r *Repository) ListSprints(ctx context.Context, sprintsDir string) ([]string, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	entries, err := os.ReadDir(sprintsDir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []string{}, nil
+		}
+		return nil, &core.IOError{
+			Operation: "read",
+			FilePath:  sprintsDir,
+			Cause:     err,
+		}
+	}
+
+	var sprintDirs []string
+	for _, entry := range entries {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		if !entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasPrefix(strings.ToLower(name), "sprint") {
+			sprintDirs = append(sprintDirs, name)
+		}
+	}
+
+	sort.SliceStable(sprintDirs, func(i, j int) bool {
+		return strings.ToLower(sprintDirs[i]) < strings.ToLower(sprintDirs[j])
+	})
+
+	return sprintDirs, nil
+}
+
+// SprintExists checks if a sprint directory exists.
+func (r *Repository) SprintExists(ctx context.Context, sprintPath string) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+
+	info, err := os.Stat(sprintPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, &core.IOError{
+			Operation: "stat",
+			FilePath:  sprintPath,
+			Cause:     err,
+		}
+	}
+
+	return info.IsDir(), nil
 }
 
 // findStoryInDir searches a directory for a story ID and returns the story and file path.
