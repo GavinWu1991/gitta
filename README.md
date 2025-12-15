@@ -229,7 +229,7 @@ go build -o gitta ./cmd/gitta
 ### First Commands
 
 ```bash
-# Initialize workspace (creates sprints/backlog + examples)
+# Initialize workspace (creates tasks/sprints + tasks/backlog with examples)
 gitta init
 
 # List current Sprint tasks
@@ -241,14 +241,14 @@ gitta list --all
 # Start working on a task
 gitta start US-001
 
-# Create a new story
+# Create a new story (defaults to tasks/backlog)
 gitta story create --title "Implement feature X"
 
 # Update story status
 gitta story status US-001 --status doing
 
 # Move story to sprint
-gitta story move US-001 --to sprints/2025-01/
+gitta story move US-001 --to tasks/sprints/2025-01/
 
 # List with filters
 gitta list --status doing --priority high
