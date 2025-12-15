@@ -18,10 +18,10 @@ func TestInitService_Initialize_Defaults(t *testing.T) {
 		t.Fatalf("Initialize: %v", err)
 	}
 
-	expectExists(t, filepath.Join(dir, "sprints", "Sprint-01"))
-	expectExists(t, filepath.Join(dir, "backlog"))
-	expectExists(t, filepath.Join(dir, "sprints", "Sprint-01", "US-001.md"))
-	expectExists(t, filepath.Join(dir, "backlog", "US-002.md"))
+	expectExists(t, filepath.Join(dir, "tasks", "sprints", "Sprint-01"))
+	expectExists(t, filepath.Join(dir, "tasks", "backlog"))
+	expectExists(t, filepath.Join(dir, "tasks", "sprints", "Sprint-01", "US-001.md"))
+	expectExists(t, filepath.Join(dir, "tasks", "backlog", "US-002.md"))
 
 	if res == nil || res.SprintDir == "" || res.BacklogDir == "" {
 		t.Fatalf("expected result with directories, got %+v", res)
@@ -34,7 +34,7 @@ func TestInitService_Initialize_Defaults(t *testing.T) {
 func TestInitService_Initialize_ExistingWithoutForce(t *testing.T) {
 	dir := t.TempDir()
 	mustMkdir(t, filepath.Join(dir, ".git"))
-	mustMkdir(t, filepath.Join(dir, "sprints", "Sprint-01"))
+	mustMkdir(t, filepath.Join(dir, "tasks", "sprints", "Sprint-01"))
 
 	svc := NewInitService()
 	_, err := svc.Initialize(context.Background(), dir, InitOptions{})
@@ -49,8 +49,8 @@ func TestInitService_Initialize_ExistingWithoutForce(t *testing.T) {
 func TestInitService_Initialize_ForceBackups(t *testing.T) {
 	dir := t.TempDir()
 	mustMkdir(t, filepath.Join(dir, ".git"))
-	mustMkdir(t, filepath.Join(dir, "sprints", "Sprint-01"))
-	mustMkdir(t, filepath.Join(dir, "backlog"))
+	mustMkdir(t, filepath.Join(dir, "tasks", "sprints", "Sprint-01"))
+	mustMkdir(t, filepath.Join(dir, "tasks", "backlog"))
 
 	svc := &initService{
 		templates: initTemplateFS,
@@ -73,8 +73,8 @@ func TestInitService_Initialize_ForceBackups(t *testing.T) {
 		}
 	}
 
-	expectExists(t, filepath.Join(dir, "sprints", "Sprint-01", "US-001.md"))
-	expectExists(t, filepath.Join(dir, "backlog", "US-002.md"))
+	expectExists(t, filepath.Join(dir, "tasks", "sprints", "Sprint-01", "US-001.md"))
+	expectExists(t, filepath.Join(dir, "tasks", "backlog", "US-002.md"))
 }
 
 func TestInitService_Initialize_InvalidSprintName(t *testing.T) {

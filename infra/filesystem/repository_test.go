@@ -221,6 +221,26 @@ func TestFindStoryByID_SearchesSprintThenBacklog(t *testing.T) {
 	}
 }
 
+func TestFindStoryByID_ConsolidatedStructure(t *testing.T) {
+	dir := t.TempDir()
+	repoPath := dir
+
+	writeStory(t, filepath.Join(repoPath, "tasks", "sprints", "Sprint-01", "US-300.md"), "US-300", "Sprint task")
+	writeStory(t, filepath.Join(repoPath, "tasks", "backlog", "US-400.md"), "US-400", "Backlog task")
+
+	repo := NewDefaultRepository()
+	story, path, err := repo.FindStoryByID(context.Background(), repoPath, "US-300")
+	if err != nil {
+		t.Fatalf("expected story, got error: %v", err)
+	}
+	if story.ID != "US-300" {
+		t.Fatalf("expected story ID US-300, got %s", story.ID)
+	}
+	if !strings.Contains(path, filepath.Join("tasks", "sprints", "Sprint-01", "US-300.md")) {
+		t.Fatalf("unexpected path: %s", path)
+	}
+}
+
 func TestFindStoryByID_NotFound(t *testing.T) {
 	repo := NewDefaultRepository()
 	_, _, err := repo.FindStoryByID(context.Background(), t.TempDir(), "US-999")

@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"errors"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gavin/gitta/internal/core"
@@ -20,13 +22,27 @@ func (f *fakeStoryRepo) ListStories(ctx context.Context, dirPath string) ([]*cor
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if err := f.listErrPerPath[dirPath]; err != nil {
+	norm := filepath.ToSlash(dirPath)
+	if err := f.listErrPerPath[norm]; err != nil {
 		return nil, err
 	}
 	if f.listErr != nil {
 		return nil, f.listErr
 	}
-	return f.storyLists[dirPath], nil
+	if stories, ok := f.storyLists[norm]; ok {
+		return stories, nil
+	}
+	// Tolerate consolidated paths by mapping to legacy keys in tests.
+	if strings.HasSuffix(norm, "tasks/backlog") {
+		return f.storyLists["backlog"], nil
+	}
+	if strings.Contains(norm, "tasks/sprints") {
+		// Strip tasks/ prefix for lookup
+		if idx := strings.Index(norm, "sprints"); idx >= 0 {
+			return f.storyLists[norm[idx:]], nil
+		}
+	}
+	return nil, nil
 }
 
 func (f *fakeStoryRepo) FindCurrentSprint(ctx context.Context, sprintsDir string) (string, error) {
@@ -171,5 +187,30 @@ func TestListAllTasks_CombinesSprintAndBacklog(t *testing.T) {
 	}
 	if sprintStories[0].Story.ID != "US-002" || backlogStories[0].Story.ID != "BL-001" {
 		t.Fatalf("unexpected IDs in result")
+	}
+}
+
+func TestListAllTasks_ConsolidatedStructure(t *testing.T) {
+	repo := &fakeStoryRepo{
+		sprintPath: "tasks/sprints/Sprint-01",
+		storyLists: map[string][]*core.Story{
+			"tasks/sprints/Sprint-01": {
+				{ID: "US-010", Title: "Sprint story"},
+			},
+			"tasks/backlog": {
+				{ID: "US-020", Title: "Backlog story"},
+			},
+		},
+		listErrPerPath: map[string]error{},
+	}
+	gitRepo := &fakeGitRepo{}
+
+	service := NewListService(repo, gitRepo)
+	sprintStories, backlogStories, err := service.ListAllTasks(context.Background(), ".")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(sprintStories) != 1 || len(backlogStories) != 1 {
+		t.Fatalf("expected sprint and backlog stories, got %d and %d", len(sprintStories), len(backlogStories))
 	}
 }

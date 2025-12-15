@@ -52,8 +52,9 @@ if [[ ! -d "${REPO_ROOT}/.git" ]]; then
   exit 1
 fi
 
-SPRINT_DIR="${REPO_ROOT}/sprints/${SPRINT_NAME}"
-BACKLOG_DIR="${REPO_ROOT}/backlog"
+TASKS_DIR="${REPO_ROOT}/tasks"
+SPRINT_DIR="${TASKS_DIR}/sprints/${SPRINT_NAME}"
+BACKLOG_DIR="${TASKS_DIR}/backlog"
 
 backup_if_exists() {
   local target="$1"

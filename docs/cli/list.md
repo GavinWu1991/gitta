@@ -22,7 +22,8 @@ gitta list [flags]
 
 ## Behavior
 
-- Default: lists tasks from the current Sprint (lexicographically latest Sprint directory under `sprints/`).
+- Structure-aware: detects consolidated `tasks/sprints/` and `tasks/backlog/`, falling back to legacy `sprints/` and `backlog/`.
+- Default: lists tasks from the current Sprint (lexicographically latest Sprint directory).
 - `--all`: lists Sprint + backlog tasks together, with sections for `Sprint` and `Backlog`.
 - Filter flags: When any filter flag is specified, lists all stories (Sprint + backlog) and applies filters.
   - Multiple values within a field use OR logic (e.g., `--status todo --status doing` matches stories with status "todo" OR "doing")

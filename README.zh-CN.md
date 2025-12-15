@@ -229,7 +229,7 @@ go build -o gitta ./cmd/gitta
 ### 首次命令
 
 ```bash
-# 初始化工作区（创建 sprints/backlog + 示例）
+# 初始化工作区（创建 tasks/sprints 和 tasks/backlog 示例）
 gitta init
 
 # 查看当前 Sprint 任务
@@ -241,14 +241,14 @@ gitta list --all
 # 开始一个任务
 gitta start US-001
 
-# 创建新故事
+# 创建新故事（默认写入 tasks/backlog）
 gitta story create --title "实现功能 X"
 
 # 更新故事状态
 gitta story status US-001 --status doing
 
 # 移动故事到 sprint
-gitta story move US-001 --to sprints/2025-01/
+gitta story move US-001 --to tasks/sprints/2025-01/
 
 # 使用过滤器列表
 gitta list --status doing --priority high

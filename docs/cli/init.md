@@ -17,12 +17,12 @@ gitta init [--force] [--example-sprint <name>]
 ## Behavior
 
 - Requires running inside a Git repository root (must contain `.git`).
-- Creates `sprints/<name>/` and `backlog/` under the repo root.
+- Creates `tasks/sprints/<name>/` and `tasks/backlog/` under the repo root.
 - Copies bundled example tasks into the new folders:
-  - `sprints/<name>/US-001.md`
-  - `backlog/US-002.md`
-- If `sprints/<name>/` or `backlog/` already exist and `--force` is not provided, exits with guidance to rerun with `--force`.
-- With `--force`, existing gitta directories are moved to timestamped backups before recreation.
+  - `tasks/sprints/<name>/US-001.md`
+  - `tasks/backlog/US-002.md`
+- If `tasks/sprints/<name>/` or `tasks/backlog/` already exist and `--force` is not provided, exits with guidance to rerun with `--force`.
+- With `--force`, existing gitta directories (including legacy `sprints/` or `backlog/`) are moved to timestamped backups before recreation.
 - Prints a summary of created directories/files and next steps (`gitta list`, `gitta list --all`).
 
 ## Exit Codes

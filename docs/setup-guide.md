@@ -128,11 +128,12 @@ git push origin :refs/tags/v1.0.0
 
 ```
 <repo>/
-├── sprints/
-│   └── Sprint-01/
-│       └── US-001.md   # example sprint task
-└── backlog/
-    └── US-002.md       # example backlog task
+├── tasks/
+│   ├── sprints/
+│   │   └── Sprint-01/
+│   │       └── US-001.md   # example sprint task
+│   └── backlog/
+│       └── US-002.md       # example backlog task
 ```
 
 After these steps, you can use the usual gitta commands:
@@ -140,4 +141,13 @@ After these steps, you can use the usual gitta commands:
 gitta list         # current Sprint
 gitta list --all   # Sprint + backlog
 gitta start <id>   # create/switch branch for a task
+```
+
+### Migrating from legacy layout
+
+If your repo still has `backlog/` and `sprints/` at root, run:
+```bash
+gitta migrate          # migrate to tasks/backlog and tasks/sprints
+gitta migrate --dry-run # preview without changes
+gitta migrate --force   # overwrite existing tasks/ with backups if conflicting
 ```

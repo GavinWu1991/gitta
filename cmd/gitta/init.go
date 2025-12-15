@@ -22,7 +22,7 @@ var initCmd = &cobra.Command{
 	Short: "Initialize gitta workspace in the current Git repository",
 	Long: `Set up the gitta workspace structure (sprints/backlog) with example tasks.
 
-By default, creates sprints/Sprint-01/ and backlog/ with sample stories. Use --example-sprint
+By default, creates tasks/sprints/Sprint-01/ and tasks/backlog/ with sample stories. Use --example-sprint
 to customize the Sprint folder name and --force to back up and recreate existing gitta folders.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {

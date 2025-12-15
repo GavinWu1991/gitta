@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/gavin/gitta/infra/filesystem"
 	"github.com/gavin/gitta/internal/core"
+	"github.com/gavin/gitta/internal/core/workspace"
 	"github.com/gavin/gitta/internal/services"
 )
 
@@ -46,10 +46,14 @@ var createCmd = &cobra.Command{
 			return fmt.Errorf("failed to determine working directory: %w", err)
 		}
 
-		// Determine story directory (default to current directory or backlog)
-		storyDir := filepath.Join(repoPath, "backlog")
+		// Determine story directory using workspace structure (default consolidated).
+		structure, err := workspace.DetectStructure(ctx, repoPath)
+		if err != nil {
+			return fmt.Errorf("failed to detect workspace structure: %w", err)
+		}
+		storyDir := workspace.ResolveBacklogPath(repoPath, structure)
 		if _, err := os.Stat(storyDir); os.IsNotExist(err) {
-			// Use current directory if backlog doesn't exist
+			// Fall back to repo root if backlog missing (keeps backward compatibility for unusual layouts).
 			storyDir = repoPath
 		}
 
