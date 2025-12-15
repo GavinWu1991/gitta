@@ -23,6 +23,12 @@ var (
 
 	// ErrWorkspaceExists indicates gitta workspace folders already exist and overwrite is disallowed.
 	ErrWorkspaceExists = errors.New("gitta workspace already exists")
+
+	// ErrAlreadyConsolidated indicates the repository is already using the consolidated tasks/ structure.
+	ErrAlreadyConsolidated = errors.New("repository already uses consolidated structure")
+
+	// ErrMigrationConflict indicates migration targets already exist without --force.
+	ErrMigrationConflict = errors.New("migration target directories already exist")
 )
 
 // AssigneeUpdateError wraps an assignee update failure with file context.
