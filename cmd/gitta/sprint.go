@@ -466,6 +466,36 @@ Examples:
 	},
 }
 
+var sprintBoardCmd = &cobra.Command{
+	Use:   "board",
+	Short: "Display interactive kanban board (spike prototype)",
+	Long: `Display an interactive three-column kanban board TUI for evaluating Bubble Tea capabilities.
+
+This is a research spike prototype that demonstrates:
+- Three-column layout rendering
+- Hardcoded task data display
+- Cursor navigation with arrow keys
+
+Use arrow keys to navigate between columns (←/→) and tasks (↑/↓).
+Press 'q' or Esc to quit.
+
+Examples:
+  gitta sprint board              # Launch the interactive board TUI`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+		if ctx == nil {
+			ctx = context.Background()
+		}
+
+		// Launch the board TUI
+		if err := tui.ShowBoard(ctx); err != nil {
+			return fmt.Errorf("board display failed: %w", err)
+		}
+
+		return nil
+	},
+}
+
 var sprintBurndownCmd = &cobra.Command{
 	Use:   "burndown [sprint-name]",
 	Short: "Generate burndown chart from Git history",
@@ -646,6 +676,7 @@ Examples:
 	sprintCmd.AddCommand(sprintPlanCmd)
 	sprintCmd.AddCommand(sprintCloseCmd)
 	sprintCmd.AddCommand(sprintBurndownCmd)
+	sprintCmd.AddCommand(sprintBoardCmd)
 }
 
 // findRepoRoot finds the Git repository root by walking up from current directory.
