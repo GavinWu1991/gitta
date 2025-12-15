@@ -1,6 +1,15 @@
-# Gitta - Git Task Assistant
+```text
+  ____ _ _   _          
+ / ___(_) |_| |_ __ _   
+| |  _| | __| __/ _` |  
+| |_| | | |_| || (_| |  
+ \____|_|\__|\__\__,_|  Git Task Assistant
+```
+<div align="center">
 
-Lightweight, Git-native task management that treats your repository as the source of truth. Track Sprint and backlog stories as Markdown, and let branch state reflect progress automatically.
+Your tasks live where your code lives. The Local-First, Git-Native Agile tool for hackers.
+
+</div>
 
 [English](README.md) | [中文](README.zh-CN.md)
 
@@ -10,34 +19,130 @@ Lightweight, Git-native task management that treats your repository as the sourc
 
 ---
 
+## Core Demo
+
+![Gitta Demo](docs/demo.gif)
+
+See Gitta in action: create a task, start working on it, and watch status update automatically based on your Git workflow.
+
+---
+
+## Architecture
+
+```mermaid
+graph LR
+    subgraph "Local Environment"
+        Dev[👨‍💻 Developer]
+        
+        subgraph "Gitta Core"
+            Engine[⚙️ Gitta Engine]
+        end
+        
+        subgraph "File System"
+            MD[📄 Markdown Tasks]
+            Git[.git Directory]
+        end
+    end
+
+    Dev -->|gitta start| Engine
+    Dev -->|gitta list| Engine
+    
+    Engine -->|Read/Write| MD
+    Engine -->|Check Branch/Commit| Git
+    
+    MD -.->|Define| Scope
+    Git -.->|Determine| Status
+    
+    Scope & Status -->|Computed State| Engine
+```
+
+Gitta acts as a bridge between your Markdown task files and Git repository state, automatically deriving task status from branch operations.
+
+---
+
+## Workflow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Todo: gitta story create (Create .md)
+    
+    Todo --> Doing: gitta start (Branch created)
+    
+    Doing --> Review: git push (Remote branch detected)
+    
+    Review --> Done: git merge (Commit merged to main)
+    
+    Done --> [*]: Archive
+    
+    note right of Doing
+        No manual board dragging needed
+        Gitta automatically detects current branch
+    end note
+```
+
+Task status flows automatically with your Git operations—no manual updates required.
+
+---
+
+## Use Cases
+
+### The "Flow" Mode
+
+You want to fix a bug without leaving your terminal.
+
+```bash
+$ gitta story create --title "Fix NPE in user service"
+$ gitta start US-001
+```
+
+🚀 Branch created. Context switched. Start coding immediately.
+
+### The "Standup" Mode
+
+You need to answer "What did you do yesterday?"
+
+```bash
+$ gitta list --all
+```
+
+📋 See all your tasks with their current status, derived automatically from Git branch state.
+
+---
+
 ## Table of Contents
 
-- [Gitta - Git Task Assistant](#gitta---git-task-assistant)
-  - [Table of Contents](#table-of-contents)
-  - [What is Gitta?](#what-is-gitta)
-    - [Features](#features)
-  - [Quick Start](#quick-start)
-    - [Prerequisites](#prerequisites)
-    - [Download Pre-built Binaries](#download-pre-built-binaries)
-    - [Installation](#installation)
-    - [One-line install + init (auto-download + init script)](#one-line-install--init-auto-download--init-script)
-    - [Build](#build)
-    - [First Commands](#first-commands)
-  - [Available Commands](#available-commands)
-    - [Quick Examples](#quick-examples)
-  - [Common Workflows](#common-workflows)
-    - [Getting Started (Install → List → Start → Verify)](#getting-started-install--list--start--verify)
-    - [Daily Flow (Pull → List → Start/Continue → Review)](#daily-flow-pull--list--startcontinue--review)
-    - [Sprint Planning (Sprint vs Backlog)](#sprint-planning-sprint-vs-backlog)
-  - [Architecture](#architecture)
-  - [Development](#development)
-    - [Project Structure](#project-structure)
-    - [Tests](#tests)
-    - [Adding New Commands](#adding-new-commands)
-  - [Contributing](#contributing)
-  - [Documentation](#documentation)
-  - [Support](#support)
-  - [License](#license)
+- [Core Demo](#core-demo)
+- [Architecture](#architecture)
+- [Workflow](#workflow)
+- [Use Cases](#use-cases)
+  - [The "Flow" Mode](#the-flow-mode)
+  - [The "Standup" Mode](#the-standup-mode)
+- [Table of Contents](#table-of-contents)
+- [What is Gitta?](#what-is-gitta)
+  - [Features](#features)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Download Pre-built Binaries](#download-pre-built-binaries)
+  - [Installation](#installation)
+  - [One-line install + init (auto-download + init script)](#one-line-install--init-auto-download--init-script)
+  - [Build](#build)
+  - [First Commands](#first-commands)
+- [Available Commands](#available-commands)
+  - [Quick Examples](#quick-examples)
+- [Common Workflows](#common-workflows)
+  - [Getting Started (Install → List → Start → Verify)](#getting-started-install--list--start--verify)
+  - [Daily Flow (Pull → List → Start/Continue → Review)](#daily-flow-pull--list--startcontinue--review)
+  - [Sprint Planning (Sprint vs Backlog)](#sprint-planning-sprint-vs-backlog)
+  - [Sprint Management](#sprint-management)
+- [Architecture](#architecture-1)
+- [Development](#development)
+  - [Project Structure](#project-structure)
+  - [Tests](#tests)
+  - [Adding New Commands](#adding-new-commands)
+- [Contributing](#contributing)
+- [Documentation](#documentation)
+- [Support](#support)
+- [License](#license)
 
 ---
 
@@ -74,7 +179,7 @@ Gitta is a Git Task Assistant that stores tasks as Markdown files inside your re
 2. Download the archive for your platform:  
    - macOS: `gitta-<version>-darwin-amd64.tar.gz` (Intel) or `darwin-arm64.tar.gz` (Apple Silicon)  
    - Linux: `gitta-<version>-linux-amd64.tar.gz` or `linux-arm64.tar.gz`  
-   - Windows: `gitta-<version>-windows-amd64.zip` or `windows-arm64.zip`
+   - Windows: `gitta-<version>-windows-amd64.zip` or `windows-amd64.zip`
 3. Verify integrity (recommended):  
    ```bash
    shasum -a 256 gitta-<version>-<platform>-<arch>.tar.gz
@@ -303,4 +408,3 @@ See `cmd/README.md` for command adapter guidance.
 ## License
 
 Licensed under the [MIT License](LICENSE).
-
