@@ -20,10 +20,10 @@ func TestInitServiceIntegration_CreatesWorkspace(t *testing.T) {
 		t.Fatalf("Initialize: %v", err)
 	}
 
-	expectPathExists(t, filepath.Join(repoPath, "sprints", "Sprint-09"))
-	expectPathExists(t, filepath.Join(repoPath, "backlog"))
-	expectPathExists(t, filepath.Join(repoPath, "sprints", "Sprint-09", "US-001.md"))
-	expectPathExists(t, filepath.Join(repoPath, "backlog", "US-002.md"))
+	expectPathExists(t, filepath.Join(repoPath, "tasks", "sprints", "Sprint-09"))
+	expectPathExists(t, filepath.Join(repoPath, "tasks", "backlog"))
+	expectPathExists(t, filepath.Join(repoPath, "tasks", "sprints", "Sprint-09", "US-001.md"))
+	expectPathExists(t, filepath.Join(repoPath, "tasks", "backlog", "US-002.md"))
 
 	if len(result.Created) != 2 {
 		t.Fatalf("expected 2 created files, got %d", len(result.Created))

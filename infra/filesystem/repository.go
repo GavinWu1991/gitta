@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gavin/gitta/internal/core"
+	"github.com/gavin/gitta/internal/core/workspace"
 )
 
 // Repository is a filesystem-backed implementation of core.StoryRepository.
@@ -162,8 +163,14 @@ func (r *Repository) FindStoryByID(ctx context.Context, repoPath, storyID string
 		return nil, "", fmt.Errorf("%w: invalid story ID format %q", core.ErrInvalidPath, storyID)
 	}
 
+	structure, err := workspace.DetectStructure(ctx, repoPath)
+	if err != nil {
+		return nil, "", err
+	}
+	paths := workspace.BuildPaths(repoPath, structure)
+
 	// Search current Sprint first.
-	sprintsDir := filepath.Join(repoPath, "sprints")
+	sprintsDir := paths.SprintsPath
 	if sprintPath, err := r.FindCurrentSprint(ctx, sprintsDir); err == nil {
 		if story, path, err := r.findStoryInDir(ctx, sprintPath, storyID); err != nil {
 			return nil, "", err
@@ -199,7 +206,7 @@ func (r *Repository) FindStoryByID(ctx context.Context, repoPath, storyID string
 	}
 
 	// Search backlog.
-	backlogPath := filepath.Join(repoPath, "backlog")
+	backlogPath := paths.BacklogPath
 	if story, path, err := r.findStoryInDir(ctx, backlogPath, storyID); err != nil {
 		return nil, "", err
 	} else if story != nil {

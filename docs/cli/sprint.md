@@ -77,7 +77,7 @@ JSON (`--json` flag):
   "start_date": "2025-01-27T00:00:00Z",
   "end_date": "2025-02-10T00:00:00Z",
   "duration": "2w",
-  "directory_path": "sprints/Sprint-01",
+  "directory_path": "tasks/sprints/Sprint-01",
   "created_at": "2025-01-27T12:00:00Z",
   "updated_at": "2025-01-27T12:00:00Z"
 }
@@ -171,7 +171,7 @@ JSON (`--json` flag):
   "sprint": {
     "id": "Sprint_27",
     "name": "@Sprint_27_Dashboard_Redesign",
-    "path": "sprints/@Sprint_27_Dashboard_Redesign",
+    "path": "tasks/sprints/@Sprint_27_Dashboard_Redesign",
     "status": "planning",
     "description": "Dashboard Redesign"
   }
@@ -331,7 +331,7 @@ Each sprint maintains a `.gitta/status` file containing the authoritative status
 
 ## Current Sprint Link
 
-The current sprint link (`sprints/Current`) provides fast lookup of the active sprint:
+The current sprint link (`tasks/sprints/Current`, or legacy `sprints/Current`) provides fast lookup of the active sprint:
 
 - **Unix-like systems**: Symbolic link (`os.Symlink`)
 - **Windows**: Junction link (`syscall.CreateSymbolicLink` with `SYMBOLIC_LINK_FLAG_DIRECTORY`)
@@ -342,7 +342,7 @@ The link is automatically updated when you run `gitta sprint start`.
 ## Sprint Directory Structure
 
 ```
-sprints/
+tasks/sprints/
 ├── Current -> !Sprint_24_Login          # Symlink/junction/text → Active sprint
 ├── !Sprint_24_Login                     # Active sprint (top)
 │   ├── .gitta/

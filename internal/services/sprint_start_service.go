@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/gavin/gitta/internal/core"
+	"github.com/gavin/gitta/internal/core/workspace"
 )
 
 // SprintStartService handles sprint creation and activation.
@@ -34,12 +34,16 @@ func (s *sprintStartService) StartSprint(ctx context.Context, req core.StartSpri
 		return nil, err
 	}
 
+	paths, err := resolveWorkspacePaths(ctx, s.repoPath)
+	if err != nil {
+		return nil, err
+	}
+
 	// Determine sprint name
 	sprintName := req.Name
 	if sprintName == "" {
 		// Auto-generate next sequential name
-		sprintsDir := filepath.Join(s.repoPath, "sprints")
-		existing, err := s.sprintRepo.ListSprints(ctx, sprintsDir)
+		existing, err := s.sprintRepo.ListSprints(ctx, paths.SprintsPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list existing sprints: %w", err)
 		}
@@ -64,8 +68,8 @@ func (s *sprintStartService) StartSprint(ctx context.Context, req core.StartSpri
 	}
 
 	// Build sprint directory path
-	sprintsDir := filepath.Join(s.repoPath, "sprints")
-	sprintDir := filepath.Join(sprintsDir, sprintName)
+	sprintsDir := paths.SprintsPath
+	sprintDir := workspace.ResolveSprintPath(s.repoPath, sprintName, paths.Structure)
 
 	// Check if sprint already exists
 	exists, err := s.sprintRepo.SprintExists(ctx, sprintDir)

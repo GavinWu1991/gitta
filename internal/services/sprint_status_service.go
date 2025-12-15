@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gavin/gitta/internal/core"
+	"github.com/gavin/gitta/internal/core/workspace"
 )
 
 // SprintActivationResult contains the result of activating a sprint.
@@ -41,7 +42,11 @@ func (s *sprintStatusService) ActivateSprint(ctx context.Context, sprintID strin
 		return nil, err
 	}
 
-	sprintsDir := filepath.Join(s.repoPath, "sprints")
+	paths, err := resolveWorkspacePaths(ctx, s.repoPath)
+	if err != nil {
+		return nil, err
+	}
+	sprintsDir := paths.SprintsPath
 
 	// Resolve sprint by ID (must be in Ready or Planning status)
 	targetSprint, err := s.sprintRepo.ResolveSprintByID(ctx, sprintsDir, sprintID)
@@ -86,7 +91,7 @@ func (s *sprintStatusService) ActivateSprint(ctx context.Context, sprintID strin
 
 		archivedSprint = &core.Sprint{
 			Name:          id,
-			DirectoryPath: filepath.Join(filepath.Dir(activeSprint.DirectoryPath), core.StatusArchived.Prefix()+id+getDescSuffix(desc)),
+			DirectoryPath: workspace.ResolveSprintPath(s.repoPath, core.StatusArchived.Prefix()+id+getDescSuffix(desc), paths.Structure),
 		}
 	}
 
@@ -111,7 +116,7 @@ func (s *sprintStatusService) ActivateSprint(ctx context.Context, sprintID strin
 	}
 
 	// Calculate new active path after rename
-	newActivePath := filepath.Join(filepath.Dir(targetSprint.DirectoryPath), core.StatusActive.Prefix()+id+getDescSuffix(desc))
+	newActivePath := workspace.ResolveSprintPath(s.repoPath, core.StatusActive.Prefix()+id+getDescSuffix(desc), paths.Structure)
 
 	// Update Current link to point to newly activated sprint
 	if err := s.sprintRepo.UpdateCurrentLink(ctx, sprintsDir, newActivePath); err != nil {

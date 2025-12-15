@@ -72,6 +72,24 @@ func TestListCommand_All_BacklogOnly(t *testing.T) {
 	}
 }
 
+func TestListCommand_TasksStructure(t *testing.T) {
+	repoPath := setupRepo(t)
+	writeStory(t, filepath.Join(repoPath, "tasks", "sprints", "Sprint-01", "US-001.md"), "US-001", "Sprint task")
+	writeStory(t, filepath.Join(repoPath, "tasks", "backlog", "BL-001.md"), "BL-001", "Backlog task")
+
+	storyRepo := filesystem.NewDefaultRepository()
+	gitRepo := git.NewRepository()
+	svc := services.NewListService(storyRepo, gitRepo)
+
+	sprintStories, backlogStories, err := svc.ListAllTasks(context.Background(), repoPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(sprintStories) != 1 || len(backlogStories) != 1 {
+		t.Fatalf("expected 1 sprint and 1 backlog story, got %d and %d", len(sprintStories), len(backlogStories))
+	}
+}
+
 func TestListCommand_FormatSnapshot(t *testing.T) {
 	repoPath := setupRepo(t)
 	writeStory(t, filepath.Join(repoPath, "sprints", "Sprint-01", "US-001.md"), "US-001", "Sprint task")

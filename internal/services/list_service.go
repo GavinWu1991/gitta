@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"sort"
 
 	"github.com/gavin/gitta/internal/core"
@@ -54,7 +53,12 @@ func (s *listService) ListSprintTasks(ctx context.Context, repoPath string) ([]*
 		return nil, err
 	}
 
-	sprintPath, err := s.storyRepo.FindCurrentSprint(ctx, filepath.Join(repoPath, "sprints"))
+	paths, err := resolveWorkspacePaths(ctx, repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	sprintPath, err := s.storyRepo.FindCurrentSprint(ctx, paths.SprintsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find current Sprint: %w", err)
 	}
@@ -77,11 +81,16 @@ func (s *listService) ListAllTasks(ctx context.Context, repoPath string) ([]*Sto
 		return nil, nil, err
 	}
 
+	paths, err := resolveWorkspacePaths(ctx, repoPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	var sprintStories []*core.Story
 	var backlogStories []*core.Story
 
 	// Try Sprint stories first; if not found, continue with backlog only.
-	if sprintPath, err := s.storyRepo.FindCurrentSprint(ctx, filepath.Join(repoPath, "sprints")); err == nil {
+	if sprintPath, err := s.storyRepo.FindCurrentSprint(ctx, paths.SprintsPath); err == nil {
 		if listed, listErr := s.storyRepo.ListStories(ctx, sprintPath); listErr == nil {
 			sprintStories = listed
 		} else {
@@ -90,7 +99,7 @@ func (s *listService) ListAllTasks(ctx context.Context, repoPath string) ([]*Sto
 	}
 
 	// Backlog stories (missing backlog directory returns empty slice).
-	if listed, err := s.storyRepo.ListStories(ctx, filepath.Join(repoPath, "backlog")); err == nil {
+	if listed, err := s.storyRepo.ListStories(ctx, paths.BacklogPath); err == nil {
 		backlogStories = listed
 	} else {
 		return nil, nil, fmt.Errorf("failed to list backlog stories: %w", err)
@@ -159,18 +168,23 @@ func (s *listService) ListStories(ctx context.Context, repoPath string, filter F
 		return nil, err
 	}
 
+	paths, err := resolveWorkspacePaths(ctx, repoPath)
+	if err != nil {
+		return nil, err
+	}
+
 	// Collect all stories from sprint and backlog
 	var allStories []*core.Story
 
 	// Sprint stories
-	if sprintPath, err := s.storyRepo.FindCurrentSprint(ctx, filepath.Join(repoPath, "sprints")); err == nil {
+	if sprintPath, err := s.storyRepo.FindCurrentSprint(ctx, paths.SprintsPath); err == nil {
 		if listed, err := s.storyRepo.ListStories(ctx, sprintPath); err == nil {
 			allStories = append(allStories, listed...)
 		}
 	}
 
 	// Backlog stories
-	if listed, err := s.storyRepo.ListStories(ctx, filepath.Join(repoPath, "backlog")); err == nil {
+	if listed, err := s.storyRepo.ListStories(ctx, paths.BacklogPath); err == nil {
 		allStories = append(allStories, listed...)
 	}
 

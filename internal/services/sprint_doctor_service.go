@@ -52,7 +52,11 @@ func (s *sprintDoctorService) DetectInconsistencies(ctx context.Context) ([]Inco
 		return nil, err
 	}
 
-	sprintsDir := filepath.Join(s.repoPath, "sprints")
+	paths, err := resolveWorkspacePaths(ctx, s.repoPath)
+	if err != nil {
+		return nil, err
+	}
+	sprintsDir := paths.SprintsPath
 	existingSprints, err := s.sprintRepo.ListSprints(ctx, sprintsDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sprints: %w", err)

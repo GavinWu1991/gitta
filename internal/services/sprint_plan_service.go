@@ -54,7 +54,11 @@ func (s *sprintPlanService) CreatePlanningSprint(ctx context.Context, req Create
 		return nil, fmt.Errorf("invalid sprint description: %w", err)
 	}
 
-	sprintsDir := filepath.Join(s.repoPath, "sprints")
+	paths, err := resolveWorkspacePaths(ctx, s.repoPath)
+	if err != nil {
+		return nil, err
+	}
+	sprintsDir := paths.SprintsPath
 
 	// Generate sprint ID if not provided
 	sprintID := req.ID

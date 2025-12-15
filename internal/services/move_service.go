@@ -43,6 +43,11 @@ func (s *moveService) MoveStory(ctx context.Context, storyID string, targetDir s
 		return fmt.Errorf("invalid target path: %w", err)
 	}
 
+	paths, err := resolveWorkspacePaths(ctx, s.repoPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve workspace paths: %w", err)
+	}
+
 	// Find story by ID
 	story, sourcePath, err := s.storyRepo.FindStoryByID(ctx, s.repoPath, storyID)
 	if err != nil {
@@ -53,9 +58,19 @@ func (s *moveService) MoveStory(ctx context.Context, storyID string, targetDir s
 	}
 
 	// Resolve target directory (relative to repo root)
-	targetDirPath := filepath.Join(s.repoPath, targetDir)
-	if !filepath.IsAbs(targetDir) {
-		targetDirPath = filepath.Join(s.repoPath, targetDir)
+	targetDirPath := targetDir
+	if !filepath.IsAbs(targetDirPath) {
+		targetDirPath = filepath.Join(s.repoPath, targetDirPath)
+	}
+
+	// Map well-known targets to workspace paths to avoid mixing structures.
+	if targetDir == "backlog" || targetDir == filepath.Clean("tasks/backlog") {
+		targetDirPath = paths.BacklogPath
+	}
+	if strings.HasPrefix(targetDir, "sprints") || strings.HasPrefix(targetDir, "tasks/sprints") {
+		// Preserve sprint subpath if provided.
+		trimmed := strings.TrimPrefix(targetDir, "tasks/")
+		targetDirPath = filepath.Join(paths.SprintsPath, strings.TrimPrefix(trimmed, "sprints/"))
 	}
 
 	// Create target directory if needed

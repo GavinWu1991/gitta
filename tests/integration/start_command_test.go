@@ -77,6 +77,29 @@ func TestStartCommand_AssigneeUpdate(t *testing.T) {
 	}
 }
 
+func TestStartCommand_TasksStructure(t *testing.T) {
+	repoPath := setupRepo(t)
+	storyPath := filepath.Join(repoPath, "tasks", "sprints", "Sprint-01", "US-020.md")
+	writeStory(t, storyPath, "US-020", "Start task")
+	commitFileToRepo(t, repoPath, storyPath, "add story")
+
+	storyRepo := filesystem.NewDefaultRepository()
+	gitRepo := git.NewRepository()
+	parser := filesystem.NewMarkdownParser()
+	svc := services.NewStartService(storyRepo, gitRepo, parser)
+
+	story, branch, err := svc.Start(context.Background(), repoPath, "US-020", nil)
+	if err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	if story.ID != "US-020" {
+		t.Fatalf("expected story ID US-020, got %s", story.ID)
+	}
+	if branch != "feat/US-020" {
+		t.Fatalf("expected branch feat/US-020, got %s", branch)
+	}
+}
+
 func commitFileToRepo(t *testing.T, repoPath, filePath, message string) {
 	t.Helper()
 	repo, err := ggit.PlainOpen(repoPath)

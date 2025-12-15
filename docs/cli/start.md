@@ -20,7 +20,7 @@ gitta start <task-id|file-path> [--assignee <name>]
 
 ## Behavior
 
-1. Locate the task (ID search through Sprint/backlog or direct file path).
+1. Locate the task (ID search through Sprint/backlog) using structure detection (`tasks/sprints` & `tasks/backlog` preferred; legacy `sprints` & `backlog` supported) or direct file path.
 2. Construct branch name `<prefix><task-id>` (default prefix `feat/` from config).
 3. Create branch if missing; checkout branch (requires clean working tree).
 4. Optionally update `assignee` frontmatter (atomic write, preserves content).

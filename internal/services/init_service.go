@@ -67,11 +67,18 @@ func (s *initService) Initialize(ctx context.Context, repoPath string, opts Init
 		return nil, err
 	}
 
-	sprintsRoot := filepath.Join(repoPath, "sprints")
+	workspaceRoot := filepath.Join(repoPath, "tasks")
+	sprintsRoot := filepath.Join(workspaceRoot, "sprints")
 	sprintDir := filepath.Join(sprintsRoot, sprintName)
-	backlogDir := filepath.Join(repoPath, "backlog")
+	backlogDir := filepath.Join(workspaceRoot, "backlog")
 
-	existing := s.existingTargets([]string{sprintDir, backlogDir})
+	// Also guard against legacy layout to avoid mixing structures.
+	existing := s.existingTargets([]string{
+		sprintDir,
+		backlogDir,
+		filepath.Join(repoPath, "sprints"),
+		filepath.Join(repoPath, "backlog"),
+	})
 	if len(existing) > 0 && !opts.Force {
 		return nil, fmt.Errorf("%w: found existing directories %v; rerun with --force to recreate", ErrWorkspaceExists, toBaseNames(existing))
 	}
