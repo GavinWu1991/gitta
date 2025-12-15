@@ -82,6 +82,7 @@ func readJunction(linkPath string) (string, error) {
 // CreateCurrentSprintLink creates a link to the current sprint directory using
 // the best available mechanism for Windows.
 // Returns the link type used and any error encountered.
+// Removes existing link at linkPath before creating a new one.
 func CreateCurrentSprintLink(targetPath, linkPath string) (LinkType, error) {
 	// Normalize paths
 	targetPath = filepath.Clean(targetPath)
@@ -95,6 +96,10 @@ func CreateCurrentSprintLink(targetPath, linkPath string) (LinkType, error) {
 	if !targetInfo.IsDir() {
 		return LinkTypeTextConfig, errors.New("target path must be a directory")
 	}
+
+	// Remove existing link/file if it exists
+	os.Remove(linkPath)
+	os.Remove(linkPath + ".txt") // Also remove text config if exists
 
 	// Try junction first (works without admin privileges)
 	if err := createJunction(targetPath, linkPath); err == nil {
@@ -110,7 +115,27 @@ func CreateCurrentSprintLink(targetPath, linkPath string) (LinkType, error) {
 
 // ReadCurrentSprintLink reads the target path from a current sprint link on Windows.
 // Supports symlinks, junctions, and text config files.
-func ReadCurrentSprintLink(linkPath string) (string, LinkType, error) {
+// Checks for "Current" first, then ".current-sprint" for migration compatibility.
+func ReadCurrentSprintLink(sprintsDir string) (string, LinkType, error) {
+	// Try "Current" first (new name)
+	currentPath := filepath.Join(sprintsDir, "Current")
+	target, linkType, err := readLinkAtPathWindows(currentPath)
+	if err == nil {
+		return target, linkType, nil
+	}
+
+	// Fallback to ".current-sprint" (old name for migration)
+	oldPath := filepath.Join(sprintsDir, ".current-sprint")
+	target, linkType, err = readLinkAtPathWindows(oldPath)
+	if err == nil {
+		return target, linkType, nil
+	}
+
+	return "", LinkTypeTextConfig, fmt.Errorf("failed to read current sprint link: %w", err)
+}
+
+// readLinkAtPathWindows reads a link at the given path on Windows, trying junction, symlink, text config, etc.
+func readLinkAtPathWindows(linkPath string) (string, LinkType, error) {
 	linkPath = filepath.Clean(linkPath)
 
 	// Try reading as symlink first

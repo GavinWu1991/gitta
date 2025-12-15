@@ -294,12 +294,31 @@ func (r *Repository) CreateSprint(ctx context.Context, sprintDir string, name st
 }
 
 // SetCurrentSprint creates/updates the current sprint link to point to the given sprint.
+// Uses "Current" as the link name and migrates from ".current-sprint" if it exists.
 func (r *Repository) SetCurrentSprint(ctx context.Context, sprintsDir string, sprintPath string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 
-	linkPath := filepath.Join(sprintsDir, ".current-sprint")
+	// Migrate from old .current-sprint link if it exists
+	oldLinkPath := filepath.Join(sprintsDir, ".current-sprint")
+	if _, err := os.Stat(oldLinkPath); err == nil {
+		// Old link exists, read its target and create new Current link
+		oldTarget, _, err := ReadCurrentSprintLink(sprintsDir)
+		if err == nil && oldTarget != "" {
+			// Create new Current link with same target
+			newLinkPath := filepath.Join(sprintsDir, "Current")
+			_, err = CreateCurrentSprintLink(oldTarget, newLinkPath)
+			if err == nil {
+				// Remove old link after successful migration
+				os.Remove(oldLinkPath)
+				os.Remove(oldLinkPath + ".txt") // Also remove text config if exists
+			}
+		}
+	}
+
+	// Create/update Current link
+	linkPath := filepath.Join(sprintsDir, "Current")
 	_, err := CreateCurrentSprintLink(sprintPath, linkPath)
 	return err
 }
@@ -334,7 +353,13 @@ func (r *Repository) ListSprints(ctx context.Context, sprintsDir string) ([]stri
 			continue
 		}
 		name := entry.Name()
-		if strings.HasPrefix(strings.ToLower(name), "sprint") {
+		// Check if name starts with sprint (with or without status prefix)
+		nameLower := strings.ToLower(name)
+		// Remove status prefix if present for comparison
+		if len(nameLower) > 0 && (nameLower[0] == '!' || nameLower[0] == '+' || nameLower[0] == '@' || nameLower[0] == '~') {
+			nameLower = nameLower[1:]
+		}
+		if strings.HasPrefix(nameLower, "sprint") {
 			sprintDirs = append(sprintDirs, name)
 		}
 	}
@@ -440,4 +465,206 @@ func (r *Repository) findStoryInDir(ctx context.Context, dirPath, storyID string
 	}
 
 	return nil, "", nil
+}
+
+// ResolveSprintByID finds a sprint by partial ID match in Ready or Planning status.
+func (r *Repository) ResolveSprintByID(ctx context.Context, sprintsDir string, sprintID string) (*core.Sprint, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	entries, err := os.ReadDir(sprintsDir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, core.ErrSprintNotFound
+		}
+		return nil, &core.IOError{
+			Operation: "read",
+			FilePath:  sprintsDir,
+			Cause:     err,
+		}
+	}
+
+	sprintIDLower := strings.ToLower(sprintID)
+	var matchedSprint *core.Sprint
+
+	for _, entry := range entries {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		if !entry.IsDir() {
+			continue
+		}
+
+		folderName := entry.Name()
+		status, id, _, err := ParseFolderName(folderName)
+		if err != nil {
+			continue // Skip folders without valid status prefix
+		}
+
+		// Only consider Ready or Planning sprints
+		if status != core.StatusReady && status != core.StatusPlanning {
+			continue
+		}
+
+		// Check for partial match (case-insensitive)
+		idLower := strings.ToLower(id)
+		if strings.Contains(idLower, sprintIDLower) || strings.Contains(sprintIDLower, idLower) {
+			sprintPath := filepath.Join(sprintsDir, folderName)
+			// Read sprint status to get full details
+			sprintStatus, err := r.ReadSprintStatus(ctx, sprintPath)
+			if err != nil {
+				continue
+			}
+
+			// Double-check status is Ready or Planning
+			if sprintStatus != core.StatusReady && sprintStatus != core.StatusPlanning {
+				continue
+			}
+
+			matchedSprint = &core.Sprint{
+				Name:          id,
+				DirectoryPath: sprintPath,
+			}
+			break // Use first match
+		}
+	}
+
+	if matchedSprint == nil {
+		return nil, core.ErrSprintNotFound
+	}
+
+	return matchedSprint, nil
+}
+
+// ReadSprintStatus reads the sprint status from .gitta/status file or infers from folder name.
+func (r *Repository) ReadSprintStatus(ctx context.Context, sprintPath string) (core.SprintStatus, error) {
+	return ReadSprintStatus(ctx, sprintPath)
+}
+
+// WriteSprintStatus writes the sprint status to .gitta/status file.
+func (r *Repository) WriteSprintStatus(ctx context.Context, sprintPath string, status core.SprintStatus) error {
+	return WriteSprintStatus(ctx, sprintPath, status)
+}
+
+// RenameSprintWithPrefix renames a sprint folder with a new status prefix atomically.
+// Includes retry logic for Windows file locks and improved error messages.
+func (r *Repository) RenameSprintWithPrefix(ctx context.Context, oldPath string, newPrefix core.SprintStatus, id string, desc string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	newName := BuildFolderName(newPrefix, id, desc)
+	newPath := filepath.Join(filepath.Dir(oldPath), newName)
+
+	// Check if target already exists
+	if _, err := os.Stat(newPath); err == nil {
+		return &core.IOError{
+			Operation: "rename",
+			FilePath:  oldPath,
+			Cause:     fmt.Errorf("target path %q already exists", newPath),
+		}
+	}
+
+	// Use os.Rename which is atomic on most filesystems
+	// Add retry logic for Windows file locks
+	var lastErr error
+	maxRetries := 3
+	retryDelay := 100 * time.Millisecond
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(retryDelay):
+				// Exponential backoff
+				retryDelay *= 2
+			}
+		}
+
+		err := os.Rename(oldPath, newPath)
+		if err == nil {
+			return nil
+		}
+
+		lastErr = err
+
+		// Check if error is likely a temporary file lock (Windows)
+		// On Windows, ERROR_SHARING_VIOLATION or ERROR_ACCESS_DENIED might indicate a lock
+		errStr := err.Error()
+		if strings.Contains(errStr, "sharing violation") ||
+			strings.Contains(errStr, "access is denied") ||
+			strings.Contains(errStr, "being used by another process") {
+			// Retry on next iteration
+			continue
+		}
+
+		// For other errors, don't retry
+		break
+	}
+
+	// Provide actionable error message
+	return &core.IOError{
+		Operation: "rename",
+		FilePath:  oldPath,
+		Cause:     fmt.Errorf("failed to rename sprint folder after %d attempts: %w. This may be due to file locks (Windows) or permissions. Try closing any programs accessing the sprint directory", maxRetries, lastErr),
+	}
+}
+
+// FindActiveSprint locates the currently active sprint.
+func (r *Repository) FindActiveSprint(ctx context.Context, sprintsDir string) (*core.Sprint, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	entries, err := os.ReadDir(sprintsDir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, core.ErrSprintNotFound
+		}
+		return nil, &core.IOError{
+			Operation: "read",
+			FilePath:  sprintsDir,
+			Cause:     err,
+		}
+	}
+
+	for _, entry := range entries {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		if !entry.IsDir() {
+			continue
+		}
+
+		folderName := entry.Name()
+		status := ExtractStatus(folderName)
+
+		if status == core.StatusActive {
+			sprintPath := filepath.Join(sprintsDir, folderName)
+			// Verify status file also says active
+			fileStatus, err := r.ReadSprintStatus(ctx, sprintPath)
+			if err == nil && fileStatus == core.StatusActive {
+				_, id, _, _ := ParseFolderName(folderName)
+				return &core.Sprint{
+					Name:          id,
+					DirectoryPath: sprintPath,
+				}, nil
+			}
+		}
+	}
+
+	return nil, core.ErrSprintNotFound
+}
+
+// UpdateCurrentLink updates the Current symlink/junction to point to the active sprint.
+func (r *Repository) UpdateCurrentLink(ctx context.Context, sprintsDir string, sprintPath string) error {
+	return r.SetCurrentSprint(ctx, sprintsDir, sprintPath)
 }

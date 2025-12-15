@@ -16,7 +16,7 @@ func TestCreateCurrentSprintLink(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	targetDir := filepath.Join(tmpDir, "target")
-	linkPath := filepath.Join(tmpDir, ".current-sprint")
+	linkPath := filepath.Join(tmpDir, "Current") // Use "Current" instead of ".current-sprint"
 
 	// Create target directory
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
@@ -83,10 +83,11 @@ func TestCreateCurrentSprintLink(t *testing.T) {
 					}
 				}
 
-				// Verify link can be read
-				readTarget, readType, readErr := filesystem.ReadCurrentSprintLink(tt.link)
+				// Verify link can be read (using sprintsDir, not linkPath)
+				sprintsDir := filepath.Dir(tt.link)
+				readTarget, readType, readErr := filesystem.ReadCurrentSprintLink(sprintsDir)
 				if readErr != nil {
-					t.Errorf("ReadCurrentSprintLink(%q) error = %v", tt.link, readErr)
+					t.Errorf("ReadCurrentSprintLink(%q) error = %v", sprintsDir, readErr)
 					return
 				}
 				if readType != gotType {
@@ -114,7 +115,7 @@ func TestReadCurrentSprintLink(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	targetDir := filepath.Join(tmpDir, "target")
-	linkPath := filepath.Join(tmpDir, ".current-sprint")
+	linkPath := filepath.Join(tmpDir, "Current") // Use "Current" instead of ".current-sprint"
 
 	// Create target directory
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
@@ -168,21 +169,23 @@ func TestReadCurrentSprintLink(t *testing.T) {
 				tt.setup()
 			}
 
-			gotTarget, gotType, err := filesystem.ReadCurrentSprintLink(linkPath)
+			// Use sprintsDir instead of linkPath
+			sprintsDir := tmpDir
+			gotTarget, gotType, err := filesystem.ReadCurrentSprintLink(sprintsDir)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadCurrentSprintLink(%q) error = %v, wantErr %v", linkPath, err, tt.wantErr)
+				t.Errorf("ReadCurrentSprintLink(%q) error = %v, wantErr %v", sprintsDir, err, tt.wantErr)
 				return
 			}
 
 			if !tt.wantErr {
 				if gotType != tt.wantType {
-					t.Errorf("ReadCurrentSprintLink(%q) type = %v, want %v", linkPath, gotType, tt.wantType)
+					t.Errorf("ReadCurrentSprintLink(%q) type = %v, want %v", sprintsDir, gotType, tt.wantType)
 				}
 				// Normalize paths for comparison
 				absTarget, _ := filepath.Abs(tt.wantTarget)
 				absGotTarget, _ := filepath.Abs(gotTarget)
 				if absTarget != absGotTarget {
-					t.Errorf("ReadCurrentSprintLink(%q) target = %q, want %q", linkPath, absGotTarget, absTarget)
+					t.Errorf("ReadCurrentSprintLink(%q) target = %q, want %q", sprintsDir, absGotTarget, absTarget)
 				}
 			}
 		})

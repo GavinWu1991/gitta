@@ -113,13 +113,8 @@ func TestSprintStartCommand(t *testing.T) {
 					tt.checkFunc(t, sprint, testRepo)
 				}
 
-				// Verify current sprint link
-				linkPath := filepath.Join(sprintsDir, ".current-sprint")
-				currentSprint, _, err := filesystem.ReadCurrentSprintLink(linkPath)
-				if err != nil {
-					// Try text config fallback
-					currentSprint, _, err = filesystem.ReadCurrentSprintLink(linkPath)
-				}
+				// Verify current sprint link (using sprintsDir)
+				currentSprint, _, err := filesystem.ReadCurrentSprintLink(sprintsDir)
 				if err == nil {
 					expectedPath := filepath.Join(sprintsDir, sprint.Name)
 					absCurrent, _ := filepath.Abs(currentSprint)

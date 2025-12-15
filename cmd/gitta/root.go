@@ -32,6 +32,7 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(storyCmd)
 	rootCmd.AddCommand(sprintCmd)
+	rootCmd.AddCommand(doctorCmd)
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
