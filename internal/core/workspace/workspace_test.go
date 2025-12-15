@@ -71,21 +71,16 @@ func TestDetectStructure_PrecedenceAndDefaults(t *testing.T) {
 
 func TestResolvers(t *testing.T) {
 	repo := "/repo"
-	if got := ResolveBacklogPath(repo, Consolidated); got != "/repo/tasks/backlog" {
-		t.Fatalf("unexpected backlog path: %s", got)
+	expect := func(got, want string) {
+		if filepath.ToSlash(got) != want {
+			t.Fatalf("unexpected path: %s want %s", got, want)
+		}
 	}
-	if got := ResolveBacklogPath(repo, Legacy); got != "/repo/backlog" {
-		t.Fatalf("unexpected backlog path: %s", got)
-	}
-	if got := ResolveSprintsPath(repo, Consolidated); got != "/repo/tasks/sprints" {
-		t.Fatalf("unexpected sprints path: %s", got)
-	}
-	if got := ResolveSprintsPath(repo, Legacy); got != "/repo/sprints" {
-		t.Fatalf("unexpected sprints path: %s", got)
-	}
-	if got := ResolveSprintPath(repo, "Sprint-01", Consolidated); got != "/repo/tasks/sprints/Sprint-01" {
-		t.Fatalf("unexpected sprint path: %s", got)
-	}
+	expect(ResolveBacklogPath(repo, Consolidated), "/repo/tasks/backlog")
+	expect(ResolveBacklogPath(repo, Legacy), "/repo/backlog")
+	expect(ResolveSprintsPath(repo, Consolidated), "/repo/tasks/sprints")
+	expect(ResolveSprintsPath(repo, Legacy), "/repo/sprints")
+	expect(ResolveSprintPath(repo, "Sprint-01", Consolidated), "/repo/tasks/sprints/Sprint-01")
 }
 
 func requireDir(t *testing.T, path string) {

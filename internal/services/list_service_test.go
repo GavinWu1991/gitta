@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -21,23 +22,24 @@ func (f *fakeStoryRepo) ListStories(ctx context.Context, dirPath string) ([]*cor
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if err := f.listErrPerPath[dirPath]; err != nil {
+	norm := filepath.ToSlash(dirPath)
+	if err := f.listErrPerPath[norm]; err != nil {
 		return nil, err
 	}
 	if f.listErr != nil {
 		return nil, f.listErr
 	}
-	if stories, ok := f.storyLists[dirPath]; ok {
+	if stories, ok := f.storyLists[norm]; ok {
 		return stories, nil
 	}
 	// Tolerate consolidated paths by mapping to legacy keys in tests.
-	if strings.HasSuffix(dirPath, "tasks/backlog") {
+	if strings.HasSuffix(norm, "tasks/backlog") {
 		return f.storyLists["backlog"], nil
 	}
-	if strings.Contains(dirPath, "tasks/sprints") {
+	if strings.Contains(norm, "tasks/sprints") {
 		// Strip tasks/ prefix for lookup
-		if idx := strings.Index(dirPath, "sprints"); idx >= 0 {
-			return f.storyLists[dirPath[idx:]], nil
+		if idx := strings.Index(norm, "sprints"); idx >= 0 {
+			return f.storyLists[norm[idx:]], nil
 		}
 	}
 	return nil, nil
