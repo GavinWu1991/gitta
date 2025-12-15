@@ -83,6 +83,18 @@ type SprintRepository interface {
 	ListSprints(ctx context.Context, sprintsDir string) ([]string, error)
 	// SprintExists checks if a sprint directory exists.
 	SprintExists(ctx context.Context, sprintPath string) (bool, error)
+	// ResolveSprintByID finds a sprint by partial ID match in Ready or Planning status.
+	ResolveSprintByID(ctx context.Context, sprintsDir string, sprintID string) (*Sprint, error)
+	// ReadSprintStatus reads the sprint status from .gitta/status file or infers from folder name.
+	ReadSprintStatus(ctx context.Context, sprintPath string) (SprintStatus, error)
+	// WriteSprintStatus writes the sprint status to .gitta/status file.
+	WriteSprintStatus(ctx context.Context, sprintPath string, status SprintStatus) error
+	// RenameSprintWithPrefix renames a sprint folder with a new status prefix atomically.
+	RenameSprintWithPrefix(ctx context.Context, oldPath string, newPrefix SprintStatus, id string, desc string) error
+	// FindActiveSprint locates the currently active sprint.
+	FindActiveSprint(ctx context.Context, sprintsDir string) (*Sprint, error)
+	// UpdateCurrentLink updates the Current symlink/junction to point to the active sprint.
+	UpdateCurrentLink(ctx context.Context, sprintsDir string, sprintPath string) error
 }
 
 // SprintService provides sprint management operations.

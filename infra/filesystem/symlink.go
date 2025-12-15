@@ -26,6 +26,7 @@ const (
 // CreateCurrentSprintLink creates a link to the current sprint directory using
 // the best available mechanism for the platform.
 // Returns the link type used and any error encountered.
+// Removes existing link at linkPath before creating a new one.
 func CreateCurrentSprintLink(targetPath, linkPath string) (LinkType, error) {
 	// Normalize paths
 	targetPath = filepath.Clean(targetPath)
@@ -40,6 +41,10 @@ func CreateCurrentSprintLink(targetPath, linkPath string) (LinkType, error) {
 		return LinkTypeTextConfig, errors.New("target path must be a directory")
 	}
 
+	// Remove existing link/file if it exists
+	os.Remove(linkPath)
+	os.Remove(linkPath + ".txt") // Also remove text config if exists
+
 	// Unix-like systems: try symlink
 	if err := os.Symlink(targetPath, linkPath); err == nil {
 		return LinkTypeSymlink, nil
@@ -50,7 +55,27 @@ func CreateCurrentSprintLink(targetPath, linkPath string) (LinkType, error) {
 
 // ReadCurrentSprintLink reads the target path from a current sprint link.
 // Supports symlinks, junctions, and text config files.
-func ReadCurrentSprintLink(linkPath string) (string, LinkType, error) {
+// Checks for "Current" first, then ".current-sprint" for migration compatibility.
+func ReadCurrentSprintLink(sprintsDir string) (string, LinkType, error) {
+	// Try "Current" first (new name)
+	currentPath := filepath.Join(sprintsDir, "Current")
+	target, linkType, err := readLinkAtPath(currentPath)
+	if err == nil {
+		return target, linkType, nil
+	}
+
+	// Fallback to ".current-sprint" (old name for migration)
+	oldPath := filepath.Join(sprintsDir, ".current-sprint")
+	target, linkType, err = readLinkAtPath(oldPath)
+	if err == nil {
+		return target, linkType, nil
+	}
+
+	return "", LinkTypeTextConfig, fmt.Errorf("failed to read current sprint link: %w", err)
+}
+
+// readLinkAtPath reads a link at the given path, trying symlink, text config, etc.
+func readLinkAtPath(linkPath string) (string, LinkType, error) {
 	linkPath = filepath.Clean(linkPath)
 
 	// Try reading as symlink first

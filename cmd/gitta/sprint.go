@@ -28,18 +28,25 @@ and 'sprint burndown' to view sprint progress over time.`,
 }
 
 var sprintStartCmd = &cobra.Command{
-	Use:   "start [sprint-name]",
-	Short: "Create and activate a new sprint",
+	Use:   "start [sprint-id]",
+	Short: "Create and activate a new sprint, or activate an existing sprint",
 	Long: `Create a new sprint directory, set up the current sprint link, and calculate the end date.
+Alternatively, activate an existing sprint in Ready or Planning status.
 
-If sprint-name is not provided, the next sequential sprint name will be auto-generated
-(e.g., Sprint-01, Sprint-02, etc.).
+If sprint-id is not provided, the next sequential sprint name will be auto-generated
+(e.g., Sprint-01, Sprint-02, etc.) and a new sprint will be created.
+
+If sprint-id is provided and matches an existing sprint in Ready or Planning status,
+that sprint will be activated (transitioned to Active status).
 
 Examples:
-  gitta sprint start                    # Auto-generate next sprint name
+  gitta sprint start                    # Auto-generate next sprint name and create
   gitta sprint start Sprint-02         # Create sprint with specific name
+  gitta sprint start 24                # Activate existing sprint (partial match)
+  gitta sprint start Sprint_24         # Activate existing sprint (full match)
   gitta sprint start --duration 3w    # Create sprint with 3-week duration
-  gitta sprint start --start-date 2025-02-01  # Create sprint starting on specific date`,
+  gitta sprint start --start-date 2025-02-01  # Create sprint starting on specific date
+  gitta sprint start --dry-run         # Show what would be done without making changes`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
@@ -51,11 +58,91 @@ Examples:
 			return fmt.Errorf("not a git repository: %w", err)
 		}
 
-		sprintName := ""
+		sprintID := ""
 		if len(args) > 0 {
-			sprintName = args[0]
+			sprintID = args[0]
 		}
 
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+
+		sprintRepo := filesystem.NewDefaultRepository()
+		sprintsDir := filepath.Join(repoPath, "sprints")
+
+		// If sprint ID provided, try to activate existing sprint
+		if sprintID != "" {
+			statusService := services.NewSprintStatusService(sprintRepo, repoPath)
+
+			if dryRun {
+				// Check if sprint exists and can be activated
+				targetSprint, err := sprintRepo.ResolveSprintByID(ctx, sprintsDir, sprintID)
+				if err != nil {
+					return fmt.Errorf("[DRY RUN] sprint %q not found in Ready or Planning status: %w", sprintID, err)
+				}
+
+				currentStatus, err := sprintRepo.ReadSprintStatus(ctx, targetSprint.DirectoryPath)
+				if err != nil {
+					return fmt.Errorf("[DRY RUN] failed to read sprint status: %w", err)
+				}
+
+				activeSprint, _ := sprintRepo.FindActiveSprint(ctx, sprintsDir)
+
+				if jsonOutput {
+					enc := json.NewEncoder(os.Stdout)
+					enc.SetIndent("", "  ")
+					return enc.Encode(map[string]interface{}{
+						"dry_run": true,
+						"action":  "activate",
+						"target": map[string]interface{}{
+							"sprint_id": filepath.Base(targetSprint.DirectoryPath),
+							"status":    currentStatus.String(),
+						},
+						"would_archive": activeSprint != nil,
+					})
+				}
+
+				fmt.Printf("[DRY RUN] Would activate sprint: %s\n", filepath.Base(targetSprint.DirectoryPath))
+				if activeSprint != nil {
+					fmt.Printf("[DRY RUN] Would archive current active sprint: %s\n", filepath.Base(activeSprint.DirectoryPath))
+				}
+				return nil
+			}
+
+			// Activate existing sprint
+			result, err := statusService.ActivateSprint(ctx, sprintID)
+			if err != nil {
+				return err
+			}
+
+			if jsonOutput {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				output := map[string]interface{}{
+					"activated": map[string]interface{}{
+						"name":   result.Activated.Name,
+						"path":   result.Activated.DirectoryPath,
+						"status": "active",
+					},
+				}
+				if result.Archived != nil {
+					output["archived"] = map[string]interface{}{
+						"name":   result.Archived.Name,
+						"path":   result.Archived.DirectoryPath,
+						"status": "archived",
+					}
+				}
+				output["current_link"] = filepath.Join(sprintsDir, "Current")
+				return enc.Encode(output)
+			}
+
+			fmt.Printf("Activated sprint: %s\n", result.Activated.Name)
+			if result.Archived != nil {
+				fmt.Printf("Archived previous active sprint: %s\n", result.Archived.Name)
+			}
+			fmt.Printf("Current sprint link updated.\n")
+			return nil
+		}
+
+		// No sprint ID provided, create new sprint
 		duration, _ := cmd.Flags().GetString("duration")
 		startDateStr, _ := cmd.Flags().GetString("start-date")
 
@@ -69,14 +156,38 @@ Examples:
 		}
 
 		req := core.StartSprintRequest{
-			Name:      sprintName,
+			Name:      "",
 			Duration:  duration,
 			StartDate: startDate,
 		}
 
 		// Create service
-		sprintRepo := filesystem.NewDefaultRepository()
 		startService := services.NewSprintStartService(sprintRepo, repoPath)
+
+		if dryRun {
+			// For dry run, just show what would be created
+			existing, err := sprintRepo.ListSprints(ctx, sprintsDir)
+			if err != nil {
+				return fmt.Errorf("[DRY RUN] failed to list sprints: %w", err)
+			}
+
+			nextName := generateNextSprintName(existing)
+
+			if jsonOutput {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				return enc.Encode(map[string]interface{}{
+					"dry_run": true,
+					"action":  "create",
+					"would_create": map[string]interface{}{
+						"name": nextName,
+					},
+				})
+			}
+
+			fmt.Printf("[DRY RUN] Would create sprint: %s\n", nextName)
+			return nil
+		}
 
 		sprint, err := startService.StartSprint(ctx, req)
 		if err != nil {
@@ -99,6 +210,47 @@ Examples:
 		fmt.Printf("✓ Current sprint link updated\n")
 		return nil
 	},
+}
+
+// generateNextSprintName generates the next sequential sprint name (helper for dry-run).
+func generateNextSprintName(existing []string) string {
+	if len(existing) == 0 {
+		return "Sprint-01"
+	}
+
+	maxNum := 0
+	for _, name := range existing {
+		var num int
+		if _, err := fmt.Sscanf(name, "Sprint-%d", &num); err == nil {
+			if num > maxNum {
+				maxNum = num
+			}
+		}
+		// Also try pattern with status prefix
+		if _, err := fmt.Sscanf(name, "!Sprint-%d", &num); err == nil {
+			if num > maxNum {
+				maxNum = num
+			}
+		}
+		if _, err := fmt.Sscanf(name, "+Sprint-%d", &num); err == nil {
+			if num > maxNum {
+				maxNum = num
+			}
+		}
+		if _, err := fmt.Sscanf(name, "@Sprint-%d", &num); err == nil {
+			if num > maxNum {
+				maxNum = num
+			}
+		}
+		if _, err := fmt.Sscanf(name, "~Sprint-%d", &num); err == nil {
+			if num > maxNum {
+				maxNum = num
+			}
+		}
+	}
+
+	nextNum := maxNum + 1
+	return fmt.Sprintf("Sprint-%02d", nextNum)
 }
 
 var sprintCloseCmd = &cobra.Command{
@@ -255,6 +407,65 @@ Examples:
 	},
 }
 
+var sprintPlanCmd = &cobra.Command{
+	Use:   "plan <name>",
+	Short: "Create a new planning sprint",
+	Long: `Create a new sprint in Planning status for future work.
+
+The sprint will be created with the @ prefix and appear in the middle section
+of the sprint list. You can later activate it using 'sprint start <id>'.
+
+Examples:
+  gitta sprint plan "Dashboard Redesign"     # Create planning sprint with auto-generated ID
+  gitta sprint plan "Payment" --id Sprint_25  # Create planning sprint with specific ID
+  gitta sprint plan "Login Feature" --json    # Output result as JSON`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		repoPath, err := findRepoRoot()
+		if err != nil {
+			return fmt.Errorf("not a git repository: %w", err)
+		}
+
+		description := args[0]
+		sprintID, _ := cmd.Flags().GetString("id")
+
+		sprintRepo := filesystem.NewDefaultRepository()
+		planService := services.NewSprintPlanService(sprintRepo, repoPath)
+
+		req := services.CreatePlanningSprintRequest{
+			ID:          sprintID,
+			Description: description,
+		}
+
+		sprint, err := planService.CreatePlanningSprint(ctx, req)
+		if err != nil {
+			return err
+		}
+
+		if jsonOutput {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			return enc.Encode(map[string]interface{}{
+				"sprint": map[string]interface{}{
+					"id":          sprint.Name,
+					"name":        filepath.Base(sprint.DirectoryPath),
+					"path":        sprint.DirectoryPath,
+					"status":      "planning",
+					"description": description,
+				},
+			})
+		}
+
+		fmt.Printf("Created planning sprint: %s\n", filepath.Base(sprint.DirectoryPath))
+		fmt.Printf("Sprint will appear in the Planning section.\n")
+		return nil
+	},
+}
+
 var sprintBurndownCmd = &cobra.Command{
 	Use:   "burndown [sprint-name]",
 	Short: "Generate burndown chart from Git history",
@@ -355,11 +566,15 @@ func init() {
 	// Sprint start flags
 	sprintStartCmd.Flags().StringP("duration", "d", "2w", "Sprint duration (e.g., '2w', '14d')")
 	sprintStartCmd.Flags().String("start-date", "", "Sprint start date (YYYY-MM-DD format, defaults to today)")
+	sprintStartCmd.Flags().Bool("dry-run", false, "Show what would be done without making changes")
 
 	// Sprint close flags
 	sprintCloseCmd.Flags().StringP("target-sprint", "t", "", "Target sprint name for rollover")
 	sprintCloseCmd.Flags().Bool("all", false, "Rollover all unfinished tasks without prompting")
 	sprintCloseCmd.Flags().Bool("skip", false, "Skip rollover, just close the sprint")
+
+	// Sprint plan flags
+	sprintPlanCmd.Flags().String("id", "", "Specify sprint ID manually (default: auto-generate next sequential number)")
 
 	// Sprint burndown flags
 	sprintBurndownCmd.Flags().StringP("sprint", "s", "", "Sprint name to analyze (alternative to positional argument)")
@@ -367,8 +582,68 @@ func init() {
 	sprintBurndownCmd.Flags().Bool("points-only", false, "Show only story points (hide task count)")
 	sprintBurndownCmd.Flags().Bool("tasks-only", false, "Show only task count (hide story points)")
 
+	var sprintPlanCmd = &cobra.Command{
+		Use:   "plan <name>",
+		Short: "Create a new planning sprint",
+		Long: `Create a new sprint in Planning status for future work.
+
+The sprint will be created with the @ prefix and appear in the middle section
+of the sprint list. You can later activate it using 'sprint start <id>'.
+
+Examples:
+  gitta sprint plan "Dashboard Redesign"     # Create planning sprint with auto-generated ID
+  gitta sprint plan "Payment" --id Sprint_25  # Create planning sprint with specific ID
+  gitta sprint plan "Login Feature" --json    # Output result as JSON`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			repoPath, err := findRepoRoot()
+			if err != nil {
+				return fmt.Errorf("not a git repository: %w", err)
+			}
+
+			description := args[0]
+			sprintID, _ := cmd.Flags().GetString("id")
+
+			sprintRepo := filesystem.NewDefaultRepository()
+			planService := services.NewSprintPlanService(sprintRepo, repoPath)
+
+			req := services.CreatePlanningSprintRequest{
+				ID:          sprintID,
+				Description: description,
+			}
+
+			sprint, err := planService.CreatePlanningSprint(ctx, req)
+			if err != nil {
+				return err
+			}
+
+			if jsonOutput {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				return enc.Encode(map[string]interface{}{
+					"sprint": map[string]interface{}{
+						"id":          sprint.Name,
+						"name":        filepath.Base(sprint.DirectoryPath),
+						"path":        sprint.DirectoryPath,
+						"status":      "planning",
+						"description": description,
+					},
+				})
+			}
+
+			fmt.Printf("Created planning sprint: %s\n", filepath.Base(sprint.DirectoryPath))
+			fmt.Printf("Sprint will appear in the Planning section.\n")
+			return nil
+		},
+	}
+
 	// Register subcommands
 	sprintCmd.AddCommand(sprintStartCmd)
+	sprintCmd.AddCommand(sprintPlanCmd)
 	sprintCmd.AddCommand(sprintCloseCmd)
 	sprintCmd.AddCommand(sprintBurndownCmd)
 }
