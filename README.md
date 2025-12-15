@@ -1,5 +1,3 @@
-<div align="center">
-
 ```text
   ____ _ _   _          
  / ___(_) |_| |_ __ _   
@@ -7,6 +5,7 @@
 | |_| | | |_| || (_| |  
  \____|_|\__|\__\__,_|  Git Task Assistant
 ```
+<div align="center">
 
 Your tasks live where your code lives. The Local-First, Git-Native Agile tool for hackers.
 
